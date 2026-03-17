@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 850 550" font-family="Inter, -apple-system, sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="1" dy="2" stdDeviation="2" flood-opacity="0.1"/></filter>
+    <marker id="ar" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#64748B"/></marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="425" y="28" text-anchor="middle" font-size="18" font-weight="700" fill="#1E293B">Kubernetes Deployment Stack — OCI / OKE</text>
+  <text x="425" y="46" text-anchor="middle" font-size="11" fill="#94A3B8">Kagent CRDs + MCP Server + Milvus + KServe on Oracle Kubernetes Engine</text>
+
+  <!-- OKE Cluster boundary -->
+  <rect x="20" y="60" width="810" height="475" rx="16" fill="#F8FAFC" stroke="#94A3B8" stroke-width="1.5" stroke-dasharray="8,4"/>
+  <text x="40" y="85" font-size="12" font-weight="700" fill="#475569">OKE Cluster (Oracle Kubernetes Engine)</text>
+  <text x="40" y="100" font-size="9" fill="#94A3B8">Namespace: kubeflow | Istio sidecar injection: enabled</text>
+
+  <!-- Kagent Namespace -->
+  <rect x="40" y="115" width="370" height="200" rx="12" fill="#F5F3FF" stroke="#8B5CF6" stroke-width="1.5" filter="url(#sh)"/>
+  <text x="55" y="138" font-size="12" font-weight="700" fill="#5B21B6">Kagent Controller + CRDs</text>
+
+  <!-- Agent CRD -->
+  <rect x="55" y="150" width="160" height="70" rx="8" fill="white" stroke="#8B5CF6" stroke-width="1"/>
+  <text x="135" y="170" text-anchor="middle" font-size="10" font-weight="700" fill="#5B21B6">Agent CRD</text>
+  <text x="135" y="185" text-anchor="middle" font-size="8" fill="#7C3AED">kubeflow-docs-agent</text>
+  <text x="135" y="198" text-anchor="middle" font-size="8" fill="#7C3AED">type: Declarative</text>
+  <text x="135" y="211" text-anchor="middle" font-size="8" fill="#7C3AED">3 tools via McpServer</text>
+
+  <!-- ModelConfig -->
+  <rect x="230" y="150" width="160" height="45" rx="8" fill="white" stroke="#8B5CF6" stroke-width="1"/>
+  <text x="310" y="170" text-anchor="middle" font-size="10" font-weight="700" fill="#5B21B6">ModelConfig</text>
+  <text x="310" y="185" text-anchor="middle" font-size="8" fill="#7C3AED">groq-llama · OpenAI provider</text>
+
+  <!-- RemoteMCPServer -->
+  <rect x="230" y="205" width="160" height="45" rx="8" fill="white" stroke="#8B5CF6" stroke-width="1"/>
+  <text x="310" y="225" text-anchor="middle" font-size="10" font-weight="700" fill="#5B21B6">RemoteMCPServer</text>
+  <text x="310" y="240" text-anchor="middle" font-size="8" fill="#7C3AED">kubeflow-docs-mcp</text>
+
+  <!-- Secret -->
+  <rect x="55" y="255" width="160" height="40" rx="8" fill="white" stroke="#8B5CF6" stroke-width="1"/>
+  <text x="135" y="275" text-anchor="middle" font-size="10" font-weight="700" fill="#5B21B6">Secret</text>
+  <text x="135" y="290" text-anchor="middle" font-size="8" fill="#7C3AED">kagent-groq (GROQ_API_KEY)</text>
+
+  <!-- Arrow from RemoteMCPServer to MCP Pod -->
+  <line x1="390" y1="227" x2="430" y2="227" stroke="#64748B" stroke-width="1.5" marker-end="url(#ar)"/>
+  <text x="410" y="220" text-anchor="middle" font-size="8" fill="#94A3B8">HTTP</text>
+
+  <!-- MCP Server Pod -->
+  <rect x="435" y="115" width="185" height="200" rx="12" fill="#ECFDF5" stroke="#10B981" stroke-width="1.5" filter="url(#sh)"/>
+  <text x="527" y="138" font-size="12" font-weight="700" fill="#065F46">MCP Server Pod</text>
+
+  <rect x="450" y="150" width="155" height="30" rx="6" fill="white" stroke="#10B981" stroke-width="1"/>
+  <text x="527" y="170" text-anchor="middle" font-size="9" font-weight="600" fill="#059669">search_kubeflow_docs()</text>
+
+  <rect x="450" y="188" width="155" height="30" rx="6" fill="white" stroke="#10B981" stroke-width="1"/>
+  <text x="527" y="208" text-anchor="middle" font-size="9" font-weight="600" fill="#059669">search_github_issues()</text>
+
+  <rect x="450" y="226" width="155" height="30" rx="6" fill="white" stroke="#10B981" stroke-width="1"/>
+  <text x="527" y="246" text-anchor="middle" font-size="9" font-weight="600" fill="#059669">search_kubeflow_code()</text>
+
+  <rect x="450" y="264" width="155" height="30" rx="6" fill="white" stroke="#10B981" stroke-width="1"/>
+  <text x="527" y="284" text-anchor="middle" font-size="9" font-weight="600" fill="#059669">log_feedback()</text>
+
+  <text x="527" y="307" text-anchor="middle" font-size="8" fill="#94A3B8">Port 8000 · /mcp</text>
+
+  <!-- Arrow MCP -> Milvus -->
+  <line x1="527" y1="315" x2="527" y2="355" stroke="#64748B" stroke-width="1.5" marker-end="url(#ar)"/>
+  <text x="540" y="340" font-size="8" fill="#94A3B8">gRPC</text>
+
+  <!-- Milvus StatefulSet -->
+  <rect x="40" y="340" width="580" height="120" rx="12" fill="#F1F5F9" stroke="#64748B" stroke-width="1.5" filter="url(#sh)"/>
+  <text x="55" y="365" font-size="12" font-weight="700" fill="#334155">Milvus Standalone (StatefulSet)</text>
+  <text x="55" y="380" font-size="9" fill="#64748B">etcd + MinIO sidecars | Istio AuthorizationPolicy for gRPC</text>
+
+  <!-- Three collections -->
+  <rect x="55" y="395" width="170" height="50" rx="8" fill="#EFF6FF" stroke="#3B82F6" stroke-width="1.5"/>
+  <text x="140" y="415" text-anchor="middle" font-size="10" font-weight="700" fill="#1D4ED8">docs_rag</text>
+  <text x="140" y="430" text-anchor="middle" font-size="8" fill="#3B82F6">kubeflow/website docs</text>
+  <text x="140" y="440" text-anchor="middle" font-size="8" fill="#94A3B8">IVF_FLAT · 768d · COSINE</text>
+
+  <rect x="240" y="395" width="170" height="50" rx="8" fill="#FFFBEB" stroke="#F59E0B" stroke-width="1.5"/>
+  <text x="325" y="415" text-anchor="middle" font-size="10" font-weight="700" fill="#D97706">issues_rag</text>
+  <text x="325" y="430" text-anchor="middle" font-size="8" fill="#F59E0B">GitHub issues + comments</text>
+  <text x="325" y="440" text-anchor="middle" font-size="8" fill="#94A3B8">issue_number · state · labels</text>
+
+  <rect x="425" y="395" width="175" height="50" rx="8" fill="#ECFDF5" stroke="#10B981" stroke-width="1.5"/>
+  <text x="512" y="415" text-anchor="middle" font-size="10" font-weight="700" fill="#059669">code_rag</text>
+  <text x="512" y="430" text-anchor="middle" font-size="8" fill="#10B981">kubeflow/manifests YAML</text>
+  <text x="512" y="440" text-anchor="middle" font-size="8" fill="#94A3B8">resource_kind · name · type</text>
+
+  <!-- KServe -->
+  <rect x="640" y="115" width="175" height="145" rx="12" fill="#FEF2F2" stroke="#F87171" stroke-width="1.5" filter="url(#sh)"/>
+  <text x="727" y="138" font-size="12" font-weight="700" fill="#991B1B">KServe</text>
+  <text x="727" y="153" font-size="9" fill="#B91C1C">InferenceService</text>
+
+  <rect x="655" y="165" width="145" height="35" rx="6" fill="white" stroke="#F87171" stroke-width="1"/>
+  <text x="727" y="182" text-anchor="middle" font-size="9" font-weight="600" fill="#991B1B">Llama 3.1-8B</text>
+  <text x="727" y="195" text-anchor="middle" font-size="8" fill="#B91C1C">vLLM runtime</text>
+
+  <rect x="655" y="210" width="145" height="35" rx="6" fill="white" stroke="#F87171" stroke-width="1"/>
+  <text x="727" y="227" text-anchor="middle" font-size="9" font-weight="600" fill="#991B1B">Scale-to-Zero</text>
+  <text x="727" y="240" text-anchor="middle" font-size="8" fill="#B91C1C">minReplicas: 0</text>
+
+  <!-- KFP -->
+  <rect x="640" y="340" width="175" height="120" rx="12" fill="#FFF7ED" stroke="#FB923C" stroke-width="1.5" filter="url(#sh)"/>
+  <text x="727" y="365" font-size="12" font-weight="700" fill="#9A3412">Kubeflow Pipelines</text>
+
+  <rect x="655" y="380" width="145" height="25" rx="5" fill="white" stroke="#FB923C" stroke-width="1"/>
+  <text x="727" y="397" text-anchor="middle" font-size="8" font-weight="600" fill="#9A3412">docs-pipeline (existing)</text>
+
+  <rect x="655" y="410" width="145" height="25" rx="5" fill="white" stroke="#FB923C" stroke-width="1"/>
+  <text x="727" y="427" text-anchor="middle" font-size="8" font-weight="600" fill="#9A3412">issues-pipeline (built)</text>
+
+  <rect x="655" y="440" width="145" height="25" rx="5" fill="white" stroke="#FB923C" stroke-width="1"/>
+  <text x="727" y="457" text-anchor="middle" font-size="8" font-weight="600" fill="#9A3412">code-pipeline (GSoC P2)</text>
+
+  <!-- Arrow KFP -> Milvus -->
+  <line x1="640" y1="430" x2="620" y2="430" stroke="#64748B" stroke-width="1.5" marker-end="url(#ar)"/>
+
+  <!-- Arrow Kagent -> KServe (LLM calls) -->
+  <path d="M210,220 Q210,280 640,180" stroke="#F87171" stroke-width="1" stroke-dasharray="4,3" fill="none" marker-end="url(#ar)"/>
+  <text x="420" y="268" font-size="8" fill="#F87171">LLM inference</text>
+
+  <!-- Istio note -->
+  <rect x="40" y="475" width="280" height="28" rx="6" fill="#F1F5F9" stroke="#94A3B8" stroke-width="1"/>
+  <text x="180" y="494" text-anchor="middle" font-size="9" fill="#64748B">Istio mTLS between all pods | AuthorizationPolicy for Milvus gRPC</text>
+
+  <!-- User access note -->
+  <rect x="340" y="475" width="280" height="28" rx="6" fill="#F1F5F9" stroke="#94A3B8" stroke-width="1"/>
+  <text x="480" y="494" text-anchor="middle" font-size="9" fill="#64748B">Kagent UI (port-forward :8083) | IDE via MCP endpoint /mcp</text>
+</svg>

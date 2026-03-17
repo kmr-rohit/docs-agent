@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 400" font-family="Inter, -apple-system, sans-serif">
+  <defs>
+    <filter id="shadow1">
+      <feDropShadow dx="1" dy="2" stdDeviation="2" flood-opacity="0.1"/>
+    </filter>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1D4ED8;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8B5CF6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#6D28D9;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="grad3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#10B981;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="gradGray" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6B7280;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#4B5563;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Title -->
+  <text x="450" y="30" text-anchor="middle" font-size="18" font-weight="700" fill="#1E293B">Current Architecture — Single-Tool RAG</text>
+  <text x="450" y="50" text-anchor="middle" font-size="12" fill="#94A3B8">One tool, one index, one shot. No routing, no issues/code search.</text>
+
+  <!-- User -->
+  <rect x="30" y="160" width="100" height="60" rx="30" fill="url(#grad1)" filter="url(#shadow1)"/>
+  <text x="80" y="195" text-anchor="middle" font-size="13" font-weight="600" fill="white">User</text>
+
+  <!-- Arrow User -> Kagent -->
+  <line x1="130" y1="190" x2="175" y2="190" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrowGray)"/>
+  <defs><marker id="arrowGray" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#94A3B8"/></marker></defs>
+
+  <!-- Kagent Agent CRD -->
+  <rect x="180" y="130" width="180" height="120" rx="12" fill="url(#grad2)" filter="url(#shadow1)"/>
+  <text x="270" y="165" text-anchor="middle" font-size="13" font-weight="700" fill="white">Kagent Agent CRD</text>
+  <text x="270" y="183" text-anchor="middle" font-size="10" fill="#DDD6FE">apiVersion: kagent.dev/v1alpha2</text>
+  <text x="270" y="200" text-anchor="middle" font-size="10" fill="#DDD6FE">ReAct Loop (Google ADK)</text>
+  <text x="270" y="217" text-anchor="middle" font-size="10" fill="#DDD6FE">tool_choice: auto</text>
+  <text x="270" y="234" text-anchor="middle" font-size="10" fill="#DDD6FE">LLM: Groq (llama-3.1-8b)</text>
+
+  <!-- Arrow Kagent -> MCP -->
+  <line x1="360" y1="190" x2="415" y2="190" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrowGray)"/>
+  <text x="387" y="182" text-anchor="middle" font-size="9" fill="#94A3B8">MCP</text>
+  <text x="387" y="193" text-anchor="middle" font-size="9" fill="#94A3B8">JSON-RPC</text>
+
+  <!-- MCP Server -->
+  <rect x="420" y="130" width="180" height="120" rx="12" fill="url(#grad3)" filter="url(#shadow1)"/>
+  <text x="510" y="162" text-anchor="middle" font-size="13" font-weight="700" fill="white">MCP Server</text>
+  <text x="510" y="180" text-anchor="middle" font-size="10" fill="#D1FAE5">FastMCP · 131 lines</text>
+  <text x="510" y="198" text-anchor="middle" font-size="10" fill="#D1FAE5">streamable-http on /mcp</text>
+  <line x1="440" y1="210" x2="580" y2="210" stroke="#D1FAE5" stroke-width="0.5"/>
+  <text x="510" y="228" text-anchor="middle" font-size="11" font-weight="600" fill="white">search_kubeflow_docs()</text>
+  <text x="510" y="244" text-anchor="middle" font-size="10" fill="#FCA5A5">Only 1 tool</text>
+
+  <!-- Arrow MCP -> Milvus -->
+  <line x1="600" y1="190" x2="655" y2="190" stroke="#94A3B8" stroke-width="2" marker-end="url(#arrowGray)"/>
+
+  <!-- Milvus -->
+  <rect x="660" y="140" width="200" height="100" rx="12" fill="url(#gradGray)" filter="url(#shadow1)"/>
+  <text x="760" y="172" text-anchor="middle" font-size="13" font-weight="700" fill="white">Milvus</text>
+  <text x="760" y="190" text-anchor="middle" font-size="10" fill="#E5E7EB">docs_rag collection only</text>
+  <text x="760" y="206" text-anchor="middle" font-size="10" fill="#E5E7EB">IVF_FLAT · COSINE</text>
+  <text x="760" y="222" text-anchor="middle" font-size="10" fill="#E5E7EB">768-dim (all-mpnet-base-v2)</text>
+
+  <!-- Gaps callout box -->
+  <rect x="180" y="290" width="580" height="80" rx="10" fill="#FEF2F2" stroke="#FCA5A5" stroke-width="1.5"/>
+  <text x="470" y="312" text-anchor="middle" font-size="12" font-weight="700" fill="#DC2626">Gaps</text>
+  <text x="470" y="330" text-anchor="middle" font-size="11" fill="#7F1D1D">No issues search · No code search · No tests · Pipeline drops collection on every run</text>
+  <text x="470" y="348" text-anchor="middle" font-size="11" fill="#7F1D1D">download_github_issues exists but unwired · No feedback loop · No IDE integration</text>
+
+  <!-- Ingestion note -->
+  <rect x="660" y="70" width="200" height="55" rx="8" fill="#FEF3C7" stroke="#F59E0B" stroke-width="1"/>
+  <text x="760" y="90" text-anchor="middle" font-size="10" font-weight="600" fill="#92400E">Ingestion (KFP Pipeline)</text>
+  <text x="760" y="105" text-anchor="middle" font-size="9" fill="#92400E">kubeflow/website .md/.html only</text>
+  <text x="760" y="118" text-anchor="middle" font-size="9" fill="#92400E">RecursiveCharacterTextSplitter(1000,100)</text>
+  <line x1="760" y1="125" x2="760" y2="140" stroke="#F59E0B" stroke-width="1.5" marker-end="url(#arrowAmber)"/>
+  <defs><marker id="arrowAmber" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#F59E0B"/></marker></defs>
+</svg>

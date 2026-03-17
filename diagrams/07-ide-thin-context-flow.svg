@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 950 400" font-family="Inter, -apple-system, sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="1" dy="2" stdDeviation="2" flood-opacity="0.1"/></filter>
+    <marker id="ar" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#64748B"/></marker>
+    <marker id="arC" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#06B6D4"/></marker>
+    <marker id="arG" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#10B981"/></marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="475" y="28" text-anchor="middle" font-size="18" font-weight="700" fill="#1E293B">Developer IDE Mode — Thin Context MCP Flow</text>
+  <text x="475" y="46" text-anchor="middle" font-size="11" fill="#94A3B8">Per KEP: "Return ~150 tokens + validation link, NOT massive context payloads"</text>
+
+  <!-- Step 1: Developer IDE -->
+  <rect x="20" y="80" width="150" height="100" rx="12" fill="#0E7490" filter="url(#sh)"/>
+  <text x="95" y="108" text-anchor="middle" font-size="13" font-weight="700" fill="white">Developer IDE</text>
+  <line x1="35" y1="116" x2="155" y2="116" stroke="rgba(255,255,255,0.3)" stroke-width="0.5"/>
+  <text x="95" y="134" text-anchor="middle" font-size="9" fill="#CFFAFE">Cursor / Claude Desktop</text>
+  <text x="95" y="148" text-anchor="middle" font-size="9" fill="#CFFAFE">Local LLM agent</text>
+  <text x="95" y="162" text-anchor="middle" font-size="9" fill="#CFFAFE">mcp-config.json</text>
+
+  <!-- Arrow 1 -->
+  <line x1="170" y1="115" x2="205" y2="115" stroke="#06B6D4" stroke-width="2" marker-end="url(#arC)"/>
+  <text x="187" y="108" text-anchor="middle" font-size="8" fill="#06B6D4">query</text>
+
+  <!-- Step 2: Trigger -->
+  <rect x="210" y="80" width="150" height="100" rx="12" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5" filter="url(#sh)"/>
+  <text x="285" y="105" text-anchor="middle" font-size="11" font-weight="700" fill="#334155">1. The Trigger</text>
+  <line x1="225" y1="113" x2="345" y2="113" stroke="#E2E8F0" stroke-width="0.5"/>
+  <text x="285" y="130" text-anchor="middle" font-size="9" fill="#64748B">Developer asks</text>
+  <text x="285" y="143" text-anchor="middle" font-size="9" fill="#64748B">syntax-heavy question</text>
+  <text x="285" y="158" text-anchor="middle" font-size="9" fill="#475569" font-weight="600">"What env vars does</text>
+  <text x="285" y="170" text-anchor="middle" font-size="9" fill="#475569" font-weight="600">KFP API server need?"</text>
+
+  <!-- Arrow 2 -->
+  <line x1="360" y1="130" x2="395" y2="130" stroke="#06B6D4" stroke-width="2" marker-end="url(#arC)"/>
+  <text x="377" y="123" text-anchor="middle" font-size="8" fill="#06B6D4">MCP</text>
+
+  <!-- Step 3: Handshake -->
+  <rect x="400" y="70" width="170" height="120" rx="12" fill="#ECFDF5" stroke="#10B981" stroke-width="1.5" filter="url(#sh)"/>
+  <text x="485" y="95" text-anchor="middle" font-size="11" font-weight="700" fill="#065F46">2. The Handshake</text>
+  <line x1="415" y1="103" x2="555" y2="103" stroke="#6EE7B7" stroke-width="0.5"/>
+  <text x="485" y="120" text-anchor="middle" font-size="9" fill="#047857">IDE agent recognizes</text>
+  <text x="485" y="133" text-anchor="middle" font-size="9" fill="#047857">docs/code need →</text>
+  <text x="485" y="148" text-anchor="middle" font-size="9" fill="#047857">routes to Kubeflow-hosted</text>
+  <text x="485" y="163" text-anchor="middle" font-size="9" font-weight="600" fill="#059669">docs_agent MCP endpoint</text>
+  <text x="485" y="180" text-anchor="middle" font-size="8" fill="#94A3B8">mcp-kubeflow-docs:8000/mcp</text>
+
+  <!-- Arrow 3 -->
+  <line x1="570" y1="130" x2="605" y2="130" stroke="#10B981" stroke-width="2" marker-end="url(#arG)"/>
+
+  <!-- Step 4: Precision Retrieval -->
+  <rect x="610" y="70" width="160" height="120" rx="12" fill="#F5F3FF" stroke="#8B5CF6" stroke-width="1.5" filter="url(#sh)"/>
+  <text x="690" y="95" text-anchor="middle" font-size="11" font-weight="700" fill="#5B21B6">3. Precision</text>
+  <text x="690" y="108" text-anchor="middle" font-size="11" font-weight="700" fill="#5B21B6">Retrieval</text>
+  <line x1="625" y1="116" x2="755" y2="116" stroke="#DDD6FE" stroke-width="0.5"/>
+  <text x="690" y="133" text-anchor="middle" font-size="9" fill="#7C3AED">MCP server searches</text>
+  <text x="690" y="146" text-anchor="middle" font-size="9" fill="#7C3AED">code_rag collection</text>
+  <text x="690" y="161" text-anchor="middle" font-size="9" fill="#7C3AED">Filters: resource_kind,</text>
+  <text x="690" y="174" text-anchor="middle" font-size="9" fill="#7C3AED">file_type, file_path</text>
+
+  <!-- Arrow 4 -->
+  <line x1="770" y1="130" x2="805" y2="130" stroke="#10B981" stroke-width="2" marker-end="url(#arG)"/>
+
+  <!-- Step 5: Thin Context Package -->
+  <rect x="810" y="70" width="120" height="120" rx="12" fill="#10B981" filter="url(#sh)"/>
+  <text x="870" y="95" text-anchor="middle" font-size="11" font-weight="700" fill="white">4. Thin</text>
+  <text x="870" y="108" text-anchor="middle" font-size="11" font-weight="700" fill="white">Context</text>
+  <line x1="822" y1="116" x2="918" y2="116" stroke="rgba(255,255,255,0.3)" stroke-width="0.5"/>
+  <text x="870" y="133" text-anchor="middle" font-size="9" fill="#D1FAE5">~150 token snippet</text>
+  <text x="870" y="148" text-anchor="middle" font-size="9" fill="#D1FAE5">+ GitHub URL</text>
+  <text x="870" y="163" text-anchor="middle" font-size="9" fill="#D1FAE5">+ score</text>
+  <text x="870" y="178" text-anchor="middle" font-size="9" fill="#D1FAE5">+ metadata</text>
+
+  <!-- Return arrow -->
+  <path d="M870,190 L870,220 L95,220 L95,180" stroke="#06B6D4" stroke-width="1.5" stroke-dasharray="5,3" fill="none" marker-end="url(#arC)"/>
+  <text x="480" y="215" text-anchor="middle" font-size="8" fill="#06B6D4">Thin context returned to IDE agent → local LLM synthesizes answer</text>
+
+  <!-- Example response box -->
+  <rect x="20" y="250" width="910" height="130" rx="12" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5"/>
+  <text x="40" y="275" font-size="12" font-weight="700" fill="#1E293B">5. What the IDE Agent Receives (Example)</text>
+  <line x1="35" y1="283" x2="915" y2="283" stroke="#E2E8F0" stroke-width="0.5"/>
+
+  <text x="40" y="302" font-size="10" fill="#64748B" font-family="monospace">Score: 0.847 | Kind: Deployment | Name: ml-pipeline-api-server</text>
+  <text x="40" y="318" font-size="10" fill="#64748B" font-family="monospace">Source: github.com/kubeflow/manifests/blob/v1.9/apps/pipeline/upstream/...</text>
+  <text x="40" y="338" font-size="10" fill="#334155" font-family="monospace">env:</text>
+  <text x="40" y="352" font-size="10" fill="#334155" font-family="monospace">  - name: DBCONFIG_MYSQLCONFIG_HOST  value: mysql.kubeflow.svc.local</text>
+  <text x="40" y="366" font-size="10" fill="#334155" font-family="monospace">  - name: OBJECTSTORECONFIG_BUCKETNAME  value: mlpipeline</text>
+
+  <!-- Key insight callout -->
+  <rect x="200" y="390" width="550" height="30" rx="8" fill="#DBEAFE" stroke="#3B82F6" stroke-width="1"/>
+  <text x="475" y="410" text-anchor="middle" font-size="10" font-weight="600" fill="#1D4ED8">Key: User's local LLM does the heavy lifting. Kubeflow infra only does fast, precise retrieval.</text>
+</svg>

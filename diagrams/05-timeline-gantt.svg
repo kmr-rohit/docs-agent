@@ -1,0 +1,127 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 480" font-family="Inter, -apple-system, sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="1" dy="1" stdDeviation="1.5" flood-opacity="0.08"/></filter>
+    <linearGradient id="doneGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#10B981"/><stop offset="100%" style="stop-color:#059669"/>
+    </linearGradient>
+    <linearGradient id="p1Grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#3B82F6"/><stop offset="100%" style="stop-color:#2563EB"/>
+    </linearGradient>
+    <linearGradient id="p2Grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#8B5CF6"/><stop offset="100%" style="stop-color:#7C3AED"/>
+    </linearGradient>
+    <linearGradient id="p3Grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#F59E0B"/><stop offset="100%" style="stop-color:#D97706"/>
+    </linearGradient>
+    <linearGradient id="p4Grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#EF4444"/><stop offset="100%" style="stop-color:#DC2626"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Title -->
+  <text x="500" y="28" text-anchor="middle" font-size="18" font-weight="700" fill="#1E293B">GSoC 2026 Timeline — 350 Hours / 12 Weeks</text>
+  <text x="500" y="46" font-size="11" text-anchor="middle" fill="#94A3B8">Green = already built locally. Blue/Purple/Amber = GSoC period work.</text>
+
+  <!-- Column headers -->
+  <text x="270" y="72" text-anchor="middle" font-size="10" font-weight="600" fill="#64748B">Community Bonding</text>
+  <text x="390" y="72" text-anchor="middle" font-size="10" font-weight="600" fill="#64748B">W1-3</text>
+  <text x="520" y="72" text-anchor="middle" font-size="10" font-weight="600" fill="#64748B">W4-7</text>
+  <text x="680" y="72" text-anchor="middle" font-size="10" font-weight="600" fill="#64748B">W8-10</text>
+  <text x="830" y="72" text-anchor="middle" font-size="10" font-weight="600" fill="#64748B">W11-12</text>
+
+  <!-- Vertical gridlines -->
+  <line x1="330" y1="80" x2="330" y2="430" stroke="#E2E8F0" stroke-width="1" stroke-dasharray="4,3"/>
+  <line x1="455" y1="80" x2="455" y2="430" stroke="#E2E8F0" stroke-width="1" stroke-dasharray="4,3"/>
+  <line x1="600" y1="80" x2="600" y2="430" stroke="#E2E8F0" stroke-width="1" stroke-dasharray="4,3"/>
+  <line x1="760" y1="80" x2="760" y2="430" stroke="#E2E8F0" stroke-width="1" stroke-dasharray="4,3"/>
+
+  <!-- Midterm eval line -->
+  <line x1="600" y1="55" x2="600" y2="435" stroke="#EF4444" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <text x="600" y="68" text-anchor="middle" font-size="9" font-weight="600" fill="#EF4444">Midterm</text>
+
+  <!-- Phase labels on left -->
+  <rect x="15" y="85" width="190" height="25" rx="5" fill="#D1FAE5"/>
+  <text x="110" y="102" text-anchor="middle" font-size="10" font-weight="700" fill="#065F46">PHASE 1: Foundation</text>
+
+  <rect x="15" y="225" width="190" height="25" rx="5" fill="#EDE9FE"/>
+  <text x="110" y="242" text-anchor="middle" font-size="10" font-weight="700" fill="#5B21B6">PHASE 2: Code Ingestion</text>
+
+  <rect x="15" y="330" width="190" height="25" rx="5" fill="#FEF3C7"/>
+  <text x="110" y="347" text-anchor="middle" font-size="10" font-weight="700" fill="#92400E">PHASE 3: Hardening</text>
+
+  <rect x="15" y="400" width="190" height="25" rx="5" fill="#FEE2E2"/>
+  <text x="110" y="417" text-anchor="middle" font-size="10" font-weight="700" fill="#991B1B">PHASE 4: Eval + Docs</text>
+
+  <!-- ====== GANTT BARS ====== -->
+
+  <!-- Row 1: Test Suite (DONE) -->
+  <text x="15" y="130" font-size="10" fill="#334155">Test suite (71 tests + CI)</text>
+  <rect x="215" y="118" width="140" height="20" rx="5" fill="url(#doneGrad)" filter="url(#sh)"/>
+  <text x="285" y="132" text-anchor="middle" font-size="8" font-weight="600" fill="white">BUILT LOCALLY</text>
+  <circle cx="363" cy="128" r="7" fill="white" stroke="#10B981" stroke-width="1.5"/>
+  <text x="363" y="131" text-anchor="middle" font-size="7" font-weight="700" fill="#10B981">PR</text>
+
+  <!-- Row 2: Issues Pipeline (DONE) -->
+  <text x="15" y="155" font-size="10" fill="#334155">Issues ingestion pipeline</text>
+  <rect x="215" y="143" width="140" height="20" rx="5" fill="url(#doneGrad)" filter="url(#sh)"/>
+  <text x="285" y="157" text-anchor="middle" font-size="8" font-weight="600" fill="white">BUILT LOCALLY</text>
+  <circle cx="363" cy="153" r="7" fill="white" stroke="#10B981" stroke-width="1.5"/>
+  <text x="363" y="156" text-anchor="middle" font-size="7" font-weight="700" fill="#10B981">PR</text>
+
+  <!-- Row 3: MCP tool (DONE) -->
+  <text x="15" y="180" font-size="10" fill="#334155">search_github_issues tool</text>
+  <rect x="215" y="168" width="100" height="20" rx="5" fill="url(#doneGrad)" filter="url(#sh)"/>
+  <text x="265" y="182" text-anchor="middle" font-size="8" font-weight="600" fill="white">BUILT</text>
+
+  <!-- Row 4: Cluster testing -->
+  <text x="15" y="205" font-size="10" fill="#334155">Issues pipeline on cluster</text>
+  <rect x="380" y="193" width="75" height="20" rx="5" fill="url(#p1Grad)" filter="url(#sh)"/>
+  <text x="417" y="207" text-anchor="middle" font-size="8" font-weight="600" fill="white">W3</text>
+
+  <!-- Row 5: YAML parser -->
+  <text x="15" y="270" font-size="10" fill="#334155">YAML parser + code pipeline</text>
+  <rect x="455" y="258" width="100" height="20" rx="5" fill="url(#p2Grad)" filter="url(#sh)"/>
+  <text x="505" y="272" text-anchor="middle" font-size="8" font-weight="600" fill="white">W4-5</text>
+
+  <!-- Row 6: Code pipeline tests -->
+  <text x="15" y="295" font-size="10" fill="#334155">Code pipeline tests + cluster</text>
+  <rect x="530" y="283" width="55" height="20" rx="5" fill="url(#p2Grad)" filter="url(#sh)"/>
+  <text x="557" y="297" text-anchor="middle" font-size="8" font-weight="600" fill="white">W6</text>
+
+  <!-- Row 7: search_kubeflow_code -->
+  <text x="15" y="320" font-size="10" fill="#334155">search_kubeflow_code + CRD</text>
+  <rect x="570" y="308" width="40" height="20" rx="5" fill="url(#p2Grad)" filter="url(#sh)"/>
+  <text x="590" y="322" text-anchor="middle" font-size="8" font-weight="600" fill="white">W7</text>
+
+  <!-- Row 8: Fix store_milvus -->
+  <text x="15" y="365" font-size="10" fill="#334155">Fix destructive store_milvus</text>
+  <rect x="615" y="353" width="55" height="20" rx="5" fill="url(#p3Grad)" filter="url(#sh)"/>
+  <text x="642" y="367" text-anchor="middle" font-size="8" font-weight="600" fill="white">W8</text>
+
+  <!-- Row 9: IDE integration -->
+  <text x="15" y="390" font-size="10" fill="#334155">IDE + feedback logging</text>
+  <rect x="665" y="378" width="90" height="20" rx="5" fill="url(#p3Grad)" filter="url(#sh)"/>
+  <text x="710" y="392" text-anchor="middle" font-size="8" font-weight="600" fill="white">W9-10</text>
+
+  <!-- Row 10: RAGAS eval -->
+  <text x="15" y="425" font-size="10" fill="#334155">RAGAS eval pipeline</text>
+  <rect x="760" y="413" width="70" height="20" rx="5" fill="url(#p4Grad)" filter="url(#sh)"/>
+  <text x="795" y="427" text-anchor="middle" font-size="8" font-weight="600" fill="white">W11</text>
+
+  <!-- Row 11: Docs + buffer -->
+  <text x="15" y="450" font-size="10" fill="#334155">Documentation + buffer</text>
+  <rect x="830" y="438" width="70" height="20" rx="5" fill="url(#p4Grad)" filter="url(#sh)"/>
+  <text x="865" y="452" text-anchor="middle" font-size="8" font-weight="600" fill="white">W12</text>
+
+  <!-- Legend -->
+  <rect x="690" y="85" width="12" height="12" rx="3" fill="url(#doneGrad)"/>
+  <text x="708" y="96" font-size="9" fill="#64748B">Already built</text>
+  <rect x="780" y="85" width="12" height="12" rx="3" fill="url(#p1Grad)"/>
+  <text x="798" y="96" font-size="9" fill="#64748B">Phase 1</text>
+  <rect x="840" y="85" width="12" height="12" rx="3" fill="url(#p2Grad)"/>
+  <text x="858" y="96" font-size="9" fill="#64748B">Phase 2</text>
+  <rect x="900" y="85" width="12" height="12" rx="3" fill="url(#p3Grad)"/>
+  <text x="918" y="96" font-size="9" fill="#64748B">Phase 3</text>
+  <rect x="955" y="85" width="12" height="12" rx="3" fill="url(#p4Grad)"/>
+  <text x="973" y="96" font-size="9" fill="#64748B">Phase 4</text>
+</svg>

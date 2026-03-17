@@ -1,0 +1,170 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 750" font-family="Inter, -apple-system, sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="1" dy="2" stdDeviation="2" flood-opacity="0.1"/></filter>
+    <marker id="ar" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#64748B"/></marker>
+    <marker id="arB" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#3B82F6"/></marker>
+    <marker id="arA" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#D97706"/></marker>
+    <marker id="arG" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#059669"/></marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="500" y="28" text-anchor="middle" font-size="18" font-weight="700" fill="#1E293B">Ingestion Pipelines — Chunking Strategies</text>
+  <text x="500" y="46" text-anchor="middle" font-size="11" fill="#94A3B8">Each data source requires a different chunking approach. One-size-fits-all text splitting destroys structure.</text>
+
+  <!-- ====== ISSUES PIPELINE (top) ====== -->
+  <rect x="20" y="65" width="960" height="300" rx="14" fill="#FFFBEB" stroke="#FCD34D" stroke-width="1"/>
+  <text x="40" y="90" font-size="14" font-weight="700" fill="#92400E">Issues Pipeline — Comment-Boundary Chunking</text>
+  <text x="40" y="106" font-size="10" fill="#B45309">Built locally · pipelines/issues-pipeline.py + issues_utils.py · 528 lines</text>
+
+  <!-- Step 1 -->
+  <rect x="40" y="125" width="155" height="80" rx="10" fill="#FEF3C7" stroke="#F59E0B" stroke-width="1.5" filter="url(#sh)"/>
+  <text x="117" y="148" text-anchor="middle" font-size="11" font-weight="700" fill="#92400E">download_github_</text>
+  <text x="117" y="163" text-anchor="middle" font-size="11" font-weight="700" fill="#92400E">issues</text>
+  <text x="117" y="180" text-anchor="middle" font-size="9" fill="#B45309">GitHub REST API</text>
+  <text x="117" y="192" text-anchor="middle" font-size="9" fill="#B45309">Pagination + rate limit</text>
+
+  <line x1="195" y1="165" x2="225" y2="165" stroke="#D97706" stroke-width="2" marker-end="url(#arA)"/>
+
+  <!-- Step 2: Chunking decision -->
+  <rect x="230" y="125" width="300" height="80" rx="10" fill="#FEF3C7" stroke="#F59E0B" stroke-width="1.5" filter="url(#sh)"/>
+  <text x="380" y="148" text-anchor="middle" font-size="11" font-weight="700" fill="#92400E">chunk_and_embed_issues</text>
+  <line x1="250" y1="157" x2="510" y2="157" stroke="#FCD34D" stroke-width="0.5"/>
+  <text x="380" y="172" text-anchor="middle" font-size="9" fill="#B45309">Short issue (body+comments &lt; 1000 chars) → single chunk</text>
+  <text x="380" y="185" text-anchor="middle" font-size="9" fill="#B45309">Long issue → split at \n\n---\n comment boundaries</text>
+  <text x="380" y="198" text-anchor="middle" font-size="9" fill="#B45309">Each chunk gets metadata prefix (repo, #, URL, labels, state)</text>
+
+  <line x1="530" y1="165" x2="560" y2="165" stroke="#D97706" stroke-width="2" marker-end="url(#arA)"/>
+
+  <!-- Step 3 -->
+  <rect x="565" y="125" width="130" height="80" rx="10" fill="#FEF3C7" stroke="#F59E0B" stroke-width="1.5" filter="url(#sh)"/>
+  <text x="630" y="150" text-anchor="middle" font-size="11" font-weight="700" fill="#92400E">store_milvus</text>
+  <text x="630" y="168" text-anchor="middle" font-size="9" fill="#B45309">→ issues_rag</text>
+  <text x="630" y="182" text-anchor="middle" font-size="9" fill="#B45309">upsert (not drop)</text>
+  <text x="630" y="195" text-anchor="middle" font-size="9" fill="#B45309">IVF_FLAT · COSINE</text>
+
+  <line x1="695" y1="165" x2="725" y2="165" stroke="#D97706" stroke-width="2" marker-end="url(#arA)"/>
+
+  <!-- Collection schema -->
+  <rect x="730" y="115" width="235" height="100" rx="10" fill="white" stroke="#F59E0B" stroke-width="1.5" filter="url(#sh)"/>
+  <text x="847" y="137" text-anchor="middle" font-size="11" font-weight="700" fill="#92400E">issues_rag schema</text>
+  <line x1="745" y1="143" x2="950" y2="143" stroke="#FCD34D" stroke-width="0.5"/>
+  <text x="755" y="160" font-size="9" fill="#64748B" font-family="monospace">file_unique_id  VARCHAR(512)</text>
+  <text x="755" y="173" font-size="9" fill="#64748B" font-family="monospace">issue_number    INT64</text>
+  <text x="755" y="186" font-size="9" fill="#64748B" font-family="monospace">issue_state     VARCHAR(64)</text>
+  <text x="755" y="199" font-size="9" fill="#64748B" font-family="monospace">issue_labels    VARCHAR(512)</text>
+  <text x="755" y="212" font-size="9" fill="#64748B" font-family="monospace">vector          FLOAT_VEC(768)</text>
+
+  <!-- Example chunk visual -->
+  <rect x="40" y="225" width="420" height="125" rx="8" fill="white" stroke="#FCD34D" stroke-width="1"/>
+  <text x="50" y="245" font-size="10" font-weight="700" fill="#92400E">Example: Issue #1234 with 3 comments</text>
+  <rect x="55" y="255" width="390" height="85" rx="5" fill="#FFFBEB"/>
+  <text x="65" y="272" font-size="9" fill="#64748B" font-family="monospace">[kubeflow/pipelines #1234] KFP SDK v2 compile error</text>
+  <text x="65" y="285" font-size="9" fill="#64748B" font-family="monospace">State: open | Labels: bug, sdk</text>
+  <text x="65" y="298" font-size="9" fill="#64748B" font-family="monospace">URL: github.com/kubeflow/pipelines/issues/1234</text>
+  <text x="65" y="311" font-size="9" fill="#64748B" font-family="monospace">---</text>
+  <text x="65" y="324" font-size="9" fill="#64748B" font-family="monospace">Getting TypeError when compiling pipeline with...</text>
+  <text x="65" y="337" font-size="9" fill="#94A3B8" font-style="italic">↑ metadata prefix on EVERY chunk = self-contained retrieval</text>
+
+  <!-- Chunking visual -->
+  <rect x="480" y="225" width="220" height="125" rx="8" fill="white" stroke="#FCD34D" stroke-width="1"/>
+  <text x="490" y="245" font-size="10" font-weight="700" fill="#92400E">Chunking Decision</text>
+  <rect x="495" y="258" width="90" height="30" rx="5" fill="#D1FAE5" stroke="#10B981" stroke-width="1"/>
+  <text x="540" y="278" text-anchor="middle" font-size="9" font-weight="600" fill="#059669">Short</text>
+  <text x="595" y="278" font-size="9" fill="#64748B">→ 1 chunk</text>
+
+  <rect x="495" y="296" width="90" height="30" rx="5" fill="#FEE2E2" stroke="#EF4444" stroke-width="1"/>
+  <text x="540" y="316" text-anchor="middle" font-size="9" font-weight="600" fill="#DC2626">Long</text>
+  <text x="595" y="310" font-size="9" fill="#64748B">→ split at ---</text>
+  <text x="595" y="322" font-size="9" fill="#64748B">  then TextSplitter</text>
+
+  <!-- ====== CODE PIPELINE (bottom) ====== -->
+  <rect x="20" y="385" width="960" height="345" rx="14" fill="#ECFDF5" stroke="#6EE7B7" stroke-width="1"/>
+  <text x="40" y="410" font-size="14" font-weight="700" fill="#065F46">Code Pipeline — AST-Aware YAML/Python Chunking</text>
+  <text x="40" y="426" font-size="10" fill="#047857">GSoC Phase 2 · pipelines/code-pipeline.py + yaml_parser.py</text>
+
+  <!-- Step 1 -->
+  <rect x="40" y="445" width="155" height="80" rx="10" fill="#D1FAE5" stroke="#10B981" stroke-width="1.5" filter="url(#sh)"/>
+  <text x="117" y="468" text-anchor="middle" font-size="11" font-weight="700" fill="#065F46">download_github_</text>
+  <text x="117" y="483" text-anchor="middle" font-size="11" font-weight="700" fill="#065F46">code</text>
+  <text x="117" y="500" text-anchor="middle" font-size="9" fill="#047857">GitHub Contents API</text>
+  <text x="117" y="512" text-anchor="middle" font-size="9" fill="#047857">.yaml .py .go only</text>
+
+  <line x1="195" y1="485" x2="225" y2="485" stroke="#059669" stroke-width="2" marker-end="url(#arG)"/>
+
+  <!-- Step 2: YAML chunking -->
+  <rect x="230" y="445" width="300" height="80" rx="10" fill="#D1FAE5" stroke="#10B981" stroke-width="1.5" filter="url(#sh)"/>
+  <text x="380" y="468" text-anchor="middle" font-size="11" font-weight="700" fill="#065F46">chunk_yaml_resources</text>
+  <line x1="250" y1="477" x2="510" y2="477" stroke="#6EE7B7" stroke-width="0.5"/>
+  <text x="380" y="492" text-anchor="middle" font-size="9" fill="#047857">YAML: split at --- boundaries → 1 K8s resource = 1 chunk</text>
+  <text x="380" y="505" text-anchor="middle" font-size="9" fill="#047857">Python: ast.parse → 1 function/class = 1 chunk</text>
+  <text x="380" y="518" text-anchor="middle" font-size="9" fill="#047857">Fallback: RecursiveCharacterTextSplitter if parsing fails</text>
+
+  <line x1="530" y1="485" x2="560" y2="485" stroke="#059669" stroke-width="2" marker-end="url(#arG)"/>
+
+  <!-- Step 3 -->
+  <rect x="565" y="445" width="130" height="80" rx="10" fill="#D1FAE5" stroke="#10B981" stroke-width="1.5" filter="url(#sh)"/>
+  <text x="630" y="470" text-anchor="middle" font-size="11" font-weight="700" fill="#065F46">store_milvus</text>
+  <text x="630" y="488" text-anchor="middle" font-size="9" fill="#047857">→ code_rag</text>
+  <text x="630" y="502" text-anchor="middle" font-size="9" fill="#047857">upsert by file_id</text>
+  <text x="630" y="515" text-anchor="middle" font-size="9" fill="#047857">IVF_FLAT · COSINE</text>
+
+  <line x1="695" y1="485" x2="725" y2="485" stroke="#059669" stroke-width="2" marker-end="url(#arG)"/>
+
+  <!-- Collection schema -->
+  <rect x="730" y="435" width="235" height="100" rx="10" fill="white" stroke="#10B981" stroke-width="1.5" filter="url(#sh)"/>
+  <text x="847" y="457" text-anchor="middle" font-size="11" font-weight="700" fill="#065F46">code_rag schema</text>
+  <line x1="745" y1="463" x2="950" y2="463" stroke="#6EE7B7" stroke-width="0.5"/>
+  <text x="755" y="480" font-size="9" fill="#64748B" font-family="monospace">resource_kind   VARCHAR(128)</text>
+  <text x="755" y="493" font-size="9" fill="#64748B" font-family="monospace">resource_name   VARCHAR(256)</text>
+  <text x="755" y="506" font-size="9" fill="#64748B" font-family="monospace">file_type       VARCHAR(64)</text>
+  <text x="755" y="519" font-size="9" fill="#64748B" font-family="monospace">file_path       VARCHAR(512)</text>
+  <text x="755" y="532" font-size="9" fill="#64748B" font-family="monospace">vector          FLOAT_VEC(768)</text>
+
+  <!-- YAML chunking example -->
+  <rect x="40" y="545" width="440" height="170" rx="8" fill="white" stroke="#6EE7B7" stroke-width="1"/>
+  <text x="50" y="565" font-size="10" font-weight="700" fill="#065F46">Why AST-Aware Chunking Matters</text>
+
+  <!-- Naive chunk (bad) -->
+  <rect x="55" y="575" width="200" height="125" rx="5" fill="#FEE2E2" stroke="#FCA5A5" stroke-width="1"/>
+  <text x="155" y="593" text-anchor="middle" font-size="9" font-weight="700" fill="#DC2626">Naive TextSplitter</text>
+  <text x="65" y="610" font-size="8" fill="#64748B" font-family="monospace">Chunk 1: metadata.name: ...</text>
+  <text x="65" y="622" font-size="8" fill="#64748B" font-family="monospace">  resources: limits:</text>
+  <text x="65" y="634" font-size="8" fill="#DC2626" font-family="monospace">  ← CUT HERE (1000 chars)</text>
+  <text x="65" y="650" font-size="8" fill="#64748B" font-family="monospace">Chunk 2: cpu: "1"</text>
+  <text x="65" y="662" font-size="8" fill="#64748B" font-family="monospace">  memory: "1Gi"</text>
+  <text x="65" y="674" font-size="8" fill="#64748B" font-family="monospace">---</text>
+  <text x="65" y="686" font-size="8" fill="#64748B" font-family="monospace">apiVersion: v1 kind: Svc</text>
+  <text x="155" y="700" text-anchor="middle" font-size="8" font-weight="600" fill="#DC2626">Lost context! Mixed resources!</text>
+
+  <!-- AST chunk (good) -->
+  <rect x="270" y="575" width="200" height="125" rx="5" fill="#D1FAE5" stroke="#10B981" stroke-width="1"/>
+  <text x="370" y="593" text-anchor="middle" font-size="9" font-weight="700" fill="#059669">AST-Aware (yaml.safe_load)</text>
+  <text x="280" y="610" font-size="8" fill="#64748B" font-family="monospace">Chunk 1: Complete Deployment</text>
+  <text x="280" y="622" font-size="8" fill="#64748B" font-family="monospace">  kind: Deployment</text>
+  <text x="280" y="634" font-size="8" fill="#64748B" font-family="monospace">  name: notebook-controller</text>
+  <text x="280" y="646" font-size="8" fill="#64748B" font-family="monospace">  resources + env: ALL intact</text>
+  <text x="280" y="666" font-size="8" fill="#64748B" font-family="monospace">Chunk 2: Complete Service</text>
+  <text x="280" y="678" font-size="8" fill="#64748B" font-family="monospace">  kind: Service</text>
+  <text x="280" y="690" font-size="8" fill="#64748B" font-family="monospace">  name: notebook-controller-svc</text>
+  <text x="370" y="700" text-anchor="middle" font-size="8" font-weight="600" fill="#059669">Full context preserved!</text>
+
+  <!-- Fallback strategy note -->
+  <rect x="500" y="555" width="465" height="155" rx="8" fill="white" stroke="#6EE7B7" stroke-width="1"/>
+  <text x="510" y="575" font-size="10" font-weight="700" fill="#065F46">Parsing Strategy with Fallbacks</text>
+
+  <rect x="515" y="588" width="120" height="28" rx="5" fill="#D1FAE5" stroke="#10B981" stroke-width="1"/>
+  <text x="575" y="607" text-anchor="middle" font-size="9" font-weight="600" fill="#059669">yaml.safe_load</text>
+  <text x="643" y="607" font-size="9" fill="#64748B">Clean YAML → split at --- → extract K8s metadata</text>
+
+  <text x="575" y="628" text-anchor="middle" font-size="8" fill="#94A3B8">fails? ↓</text>
+
+  <rect x="515" y="638" width="120" height="28" rx="5" fill="#FEF3C7" stroke="#F59E0B" stroke-width="1"/>
+  <text x="575" y="657" text-anchor="middle" font-size="9" font-weight="600" fill="#D97706">regex split ---</text>
+  <text x="643" y="657" font-size="9" fill="#64748B">Helm templates, invalid YAML → regex boundary split</text>
+
+  <text x="575" y="678" text-anchor="middle" font-size="8" fill="#94A3B8">fails? ↓</text>
+
+  <rect x="515" y="685" width="120" height="28" rx="5" fill="#FEE2E2" stroke="#EF4444" stroke-width="1"/>
+  <text x="575" y="704" text-anchor="middle" font-size="9" font-weight="600" fill="#DC2626">TextSplitter</text>
+  <text x="643" y="704" font-size="9" fill="#64748B">Last resort → RecursiveCharacterTextSplitter(1000,100)</text>
+</svg>

@@ -1,0 +1,196 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1050 680" font-family="Inter, -apple-system, sans-serif">
+  <defs>
+    <filter id="sh"><feDropShadow dx="1" dy="2" stdDeviation="2" flood-opacity="0.1"/></filter>
+    <linearGradient id="blue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6"/><stop offset="100%" style="stop-color:#1D4ED8"/>
+    </linearGradient>
+    <linearGradient id="purple" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8B5CF6"/><stop offset="100%" style="stop-color:#6D28D9"/>
+    </linearGradient>
+    <linearGradient id="green" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#10B981"/><stop offset="100%" style="stop-color:#059669"/>
+    </linearGradient>
+    <linearGradient id="amber" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#F59E0B"/><stop offset="100%" style="stop-color:#D97706"/>
+    </linearGradient>
+    <linearGradient id="rose" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#F43F5E"/><stop offset="100%" style="stop-color:#E11D48"/>
+    </linearGradient>
+    <linearGradient id="slate" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#475569"/><stop offset="100%" style="stop-color:#334155"/>
+    </linearGradient>
+    <linearGradient id="cyan" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#06B6D4"/><stop offset="100%" style="stop-color:#0891B2"/>
+    </linearGradient>
+    <marker id="arr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#94A3B8"/></marker>
+    <marker id="arrB" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#3B82F6"/></marker>
+    <marker id="arrG" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#10B981"/></marker>
+    <marker id="arrA" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#F59E0B"/></marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="525" y="30" text-anchor="middle" font-size="20" font-weight="700" fill="#1E293B">Proposed Architecture — Multi-Index Agentic RAG</text>
+  <text x="525" y="50" text-anchor="middle" font-size="12" fill="#94A3B8">Kagent (Architecture B) · 3 MCP Tools · 3 Milvus Collections · KFP Ingestion Pipelines</text>
+
+  <!-- ====== QUERY PATH (top half) ====== -->
+  <text x="30" y="80" font-size="13" font-weight="700" fill="#64748B">QUERY PATH</text>
+
+  <!-- User boxes -->
+  <rect x="30" y="100" width="110" height="50" rx="25" fill="url(#blue)" filter="url(#sh)"/>
+  <text x="85" y="130" text-anchor="middle" font-size="12" font-weight="600" fill="white">Website Chat</text>
+
+  <rect x="30" y="165" width="110" height="50" rx="25" fill="url(#cyan)" filter="url(#sh)"/>
+  <text x="85" y="195" text-anchor="middle" font-size="12" font-weight="600" fill="white">IDE (Cursor)</text>
+
+  <rect x="30" y="230" width="110" height="50" rx="25" fill="url(#cyan)" filter="url(#sh)"/>
+  <text x="85" y="260" text-anchor="middle" font-size="12" font-weight="600" fill="white">Claude Desktop</text>
+
+  <!-- Arrows to Kagent -->
+  <line x1="140" y1="125" x2="195" y2="180" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="140" y1="190" x2="195" y2="190" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="140" y1="255" x2="195" y2="200" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <!-- Kagent Agent CRD -->
+  <rect x="200" y="120" width="200" height="150" rx="12" fill="url(#purple)" filter="url(#sh)"/>
+  <text x="300" y="148" text-anchor="middle" font-size="14" font-weight="700" fill="white">Kagent Agent CRD</text>
+  <text x="300" y="166" text-anchor="middle" font-size="10" fill="#DDD6FE">kagent.dev/v1alpha2</text>
+  <line x1="220" y1="175" x2="380" y2="175" stroke="#DDD6FE" stroke-width="0.5"/>
+  <text x="300" y="193" text-anchor="middle" font-size="10" fill="#DDD6FE">ReAct Loop (Google ADK)</text>
+  <text x="300" y="210" text-anchor="middle" font-size="10" fill="#DDD6FE">tool_choice: auto</text>
+  <text x="300" y="227" text-anchor="middle" font-size="10" fill="#DDD6FE">LLM routes via systemMessage</text>
+  <text x="300" y="244" text-anchor="middle" font-size="10" fill="#DDD6FE">A2A protocol for queries</text>
+  <text x="300" y="261" text-anchor="middle" font-size="10" fill="#DDD6FE">Thin Context: ~150 tokens + links</text>
+
+  <!-- Arrow Kagent -> MCP -->
+  <line x1="400" y1="195" x2="455" y2="195" stroke="#94A3B8" stroke-width="2" marker-end="url(#arr)"/>
+  <text x="427" y="188" text-anchor="middle" font-size="9" fill="#94A3B8">MCP</text>
+
+  <!-- MCP Server -->
+  <rect x="460" y="95" width="210" height="200" rx="12" fill="url(#green)" filter="url(#sh)"/>
+  <text x="565" y="120" text-anchor="middle" font-size="14" font-weight="700" fill="white">MCP Server</text>
+  <text x="565" y="136" text-anchor="middle" font-size="10" fill="#D1FAE5">FastMCP · streamable-http · /mcp</text>
+  <line x1="478" y1="145" x2="652" y2="145" stroke="#D1FAE5" stroke-width="0.5"/>
+
+  <!-- Tool 1 -->
+  <rect x="475" y="155" width="180" height="30" rx="6" fill="rgba(255,255,255,0.15)"/>
+  <text x="565" y="175" text-anchor="middle" font-size="11" font-weight="600" fill="white">search_kubeflow_docs()</text>
+
+  <!-- Tool 2 -->
+  <rect x="475" y="195" width="180" height="30" rx="6" fill="rgba(255,255,255,0.15)"/>
+  <text x="565" y="215" text-anchor="middle" font-size="11" font-weight="600" fill="white">search_github_issues()</text>
+
+  <!-- Tool 3 -->
+  <rect x="475" y="235" width="180" height="30" rx="6" fill="rgba(255,255,255,0.15)"/>
+  <text x="565" y="255" text-anchor="middle" font-size="11" font-weight="600" fill="white">search_kubeflow_code()</text>
+
+  <!-- Tool 4 (feedback) -->
+  <rect x="475" y="268" width="180" height="20" rx="6" fill="rgba(255,255,255,0.1)"/>
+  <text x="565" y="282" text-anchor="middle" font-size="9" fill="#D1FAE5">log_feedback() · _search_collection()</text>
+
+  <!-- Arrows MCP -> Milvus collections -->
+  <line x1="670" y1="170" x2="740" y2="130" stroke="#3B82F6" stroke-width="1.5" marker-end="url(#arrB)"/>
+  <line x1="670" y1="210" x2="740" y2="210" stroke="#F59E0B" stroke-width="1.5" marker-end="url(#arrA)"/>
+  <line x1="670" y1="250" x2="740" y2="280" stroke="#10B981" stroke-width="1.5" marker-end="url(#arrG)"/>
+
+  <!-- Milvus Collections -->
+  <rect x="745" y="90" width="270" height="75" rx="10" fill="#EFF6FF" stroke="#3B82F6" stroke-width="1.5" filter="url(#sh)"/>
+  <text x="880" y="112" text-anchor="middle" font-size="12" font-weight="700" fill="#1D4ED8">docs_rag</text>
+  <text x="880" y="128" text-anchor="middle" font-size="10" fill="#3B82F6">kubeflow/website .md/.html</text>
+  <text x="880" y="143" text-anchor="middle" font-size="9" fill="#64748B">file_unique_id · content_text · citation_url</text>
+  <text x="880" y="156" text-anchor="middle" font-size="9" fill="#64748B">FLOAT_VECTOR(768) · IVF_FLAT · COSINE</text>
+
+  <rect x="745" y="178" width="270" height="75" rx="10" fill="#FFFBEB" stroke="#F59E0B" stroke-width="1.5" filter="url(#sh)"/>
+  <text x="880" y="200" text-anchor="middle" font-size="12" font-weight="700" fill="#D97706">issues_rag</text>
+  <text x="880" y="216" text-anchor="middle" font-size="10" fill="#F59E0B">GitHub issues + comments</text>
+  <text x="880" y="231" text-anchor="middle" font-size="9" fill="#64748B">issue_number · issue_state · issue_labels</text>
+  <text x="880" y="244" text-anchor="middle" font-size="9" fill="#64748B">repo_name · source_type · chunk_index</text>
+
+  <rect x="745" y="266" width="270" height="75" rx="10" fill="#ECFDF5" stroke="#10B981" stroke-width="1.5" filter="url(#sh)"/>
+  <text x="880" y="288" text-anchor="middle" font-size="12" font-weight="700" fill="#059669">code_rag</text>
+  <text x="880" y="304" text-anchor="middle" font-size="10" fill="#10B981">kubeflow/manifests YAML + Python</text>
+  <text x="880" y="319" text-anchor="middle" font-size="9" fill="#64748B">resource_kind · resource_name · resource_namespace</text>
+  <text x="880" y="332" text-anchor="middle" font-size="9" fill="#64748B">file_type · file_path · AST-aware chunks</text>
+
+  <!-- ====== INGESTION PATH (bottom half) ====== -->
+  <line x1="30" y1="380" x2="1020" y2="380" stroke="#E2E8F0" stroke-width="1" stroke-dasharray="6,4"/>
+  <text x="30" y="405" font-size="13" font-weight="700" fill="#64748B">INGESTION PATH (KFP Pipelines)</text>
+
+  <!-- Docs Pipeline -->
+  <rect x="30" y="420" width="140" height="45" rx="8" fill="url(#blue)" filter="url(#sh)"/>
+  <text x="100" y="438" text-anchor="middle" font-size="10" font-weight="600" fill="white">download_github_</text>
+  <text x="100" y="452" text-anchor="middle" font-size="10" font-weight="600" fill="white">directory</text>
+
+  <line x1="170" y1="442" x2="195" y2="442" stroke="#3B82F6" stroke-width="1.5" marker-end="url(#arrB)"/>
+
+  <rect x="200" y="420" width="130" height="45" rx="8" fill="url(#blue)" filter="url(#sh)"/>
+  <text x="265" y="438" text-anchor="middle" font-size="10" font-weight="600" fill="white">chunk_and_embed</text>
+  <text x="265" y="452" text-anchor="middle" font-size="9" fill="#BFDBFE">TextSplitter(1000,100)</text>
+
+  <line x1="330" y1="442" x2="355" y2="442" stroke="#3B82F6" stroke-width="1.5" marker-end="url(#arrB)"/>
+
+  <rect x="360" y="420" width="110" height="45" rx="8" fill="url(#blue)" filter="url(#sh)"/>
+  <text x="415" y="438" text-anchor="middle" font-size="10" font-weight="600" fill="white">store_milvus</text>
+  <text x="415" y="452" text-anchor="middle" font-size="9" fill="#BFDBFE">→ docs_rag</text>
+
+  <text x="250" y="485" text-anchor="middle" font-size="10" fill="#3B82F6" font-weight="600">Docs Pipeline (existing)</text>
+
+  <!-- Issues Pipeline -->
+  <rect x="30" y="505" width="140" height="45" rx="8" fill="url(#amber)" filter="url(#sh)"/>
+  <text x="100" y="523" text-anchor="middle" font-size="10" font-weight="600" fill="white">download_github_</text>
+  <text x="100" y="537" text-anchor="middle" font-size="10" font-weight="600" fill="white">issues</text>
+
+  <line x1="170" y1="527" x2="195" y2="527" stroke="#F59E0B" stroke-width="1.5" marker-end="url(#arrA)"/>
+
+  <rect x="200" y="505" width="130" height="45" rx="8" fill="url(#amber)" filter="url(#sh)"/>
+  <text x="265" y="523" text-anchor="middle" font-size="10" font-weight="600" fill="white">chunk_and_embed</text>
+  <text x="265" y="537" text-anchor="middle" font-size="9" fill="#FEF3C7">_issues (comment-aware)</text>
+
+  <line x1="330" y1="527" x2="355" y2="527" stroke="#F59E0B" stroke-width="1.5" marker-end="url(#arrA)"/>
+
+  <rect x="360" y="505" width="110" height="45" rx="8" fill="url(#amber)" filter="url(#sh)"/>
+  <text x="415" y="523" text-anchor="middle" font-size="10" font-weight="600" fill="white">store_milvus</text>
+  <text x="415" y="537" text-anchor="middle" font-size="9" fill="#FEF3C7">→ issues_rag</text>
+
+  <text x="250" y="570" text-anchor="middle" font-size="10" fill="#D97706" font-weight="600">Issues Pipeline (built locally, ready to PR)</text>
+
+  <!-- Code Pipeline -->
+  <rect x="30" y="590" width="140" height="45" rx="8" fill="url(#green)" filter="url(#sh)"/>
+  <text x="100" y="608" text-anchor="middle" font-size="10" font-weight="600" fill="white">download_github_</text>
+  <text x="100" y="622" text-anchor="middle" font-size="10" font-weight="600" fill="white">code</text>
+
+  <line x1="170" y1="612" x2="195" y2="612" stroke="#10B981" stroke-width="1.5" marker-end="url(#arrG)"/>
+
+  <rect x="200" y="590" width="130" height="45" rx="8" fill="url(#green)" filter="url(#sh)"/>
+  <text x="265" y="608" text-anchor="middle" font-size="10" font-weight="600" fill="white">chunk_yaml_</text>
+  <text x="265" y="622" text-anchor="middle" font-size="9" fill="#D1FAE5">resources (AST-aware)</text>
+
+  <line x1="330" y1="612" x2="355" y2="612" stroke="#10B981" stroke-width="1.5" marker-end="url(#arrG)"/>
+
+  <rect x="360" y="590" width="110" height="45" rx="8" fill="url(#green)" filter="url(#sh)"/>
+  <text x="415" y="608" text-anchor="middle" font-size="10" font-weight="600" fill="white">store_milvus</text>
+  <text x="415" y="622" text-anchor="middle" font-size="9" fill="#D1FAE5">→ code_rag</text>
+
+  <text x="250" y="655" text-anchor="middle" font-size="10" fill="#059669" font-weight="600">Code Pipeline (GSoC Phase 2)</text>
+
+  <!-- Arrows from store_milvus to collections -->
+  <path d="M470,442 Q550,442 740,130" stroke="#3B82F6" stroke-width="1" stroke-dasharray="4,3" fill="none" marker-end="url(#arrB)"/>
+  <path d="M470,527 Q600,527 740,215" stroke="#F59E0B" stroke-width="1" stroke-dasharray="4,3" fill="none" marker-end="url(#arrA)"/>
+  <path d="M470,612 Q620,500 740,303" stroke="#10B981" stroke-width="1" stroke-dasharray="4,3" fill="none" marker-end="url(#arrG)"/>
+
+  <!-- Embedding model note -->
+  <rect x="530" y="430" width="180" height="50" rx="8" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1"/>
+  <text x="620" y="450" text-anchor="middle" font-size="10" font-weight="600" fill="#475569">Shared Embedding Model</text>
+  <text x="620" y="466" text-anchor="middle" font-size="9" fill="#94A3B8">all-mpnet-base-v2 (768-dim)</text>
+  <text x="620" y="478" text-anchor="middle" font-size="9" fill="#94A3B8">Singleton in MCP server</text>
+
+  <!-- Feedback note -->
+  <rect x="530" y="510" width="180" height="40" rx="8" fill="#FFF1F2" stroke="#FB7185" stroke-width="1"/>
+  <text x="620" y="530" text-anchor="middle" font-size="10" font-weight="600" fill="#E11D48">Feedback Loop</text>
+  <text x="620" y="543" text-anchor="middle" font-size="9" fill="#9F1239">log_feedback() → JSONL → Golden Dataset</text>
+
+  <!-- KServe note -->
+  <rect x="530" y="580" width="180" height="50" rx="8" fill="#F5F3FF" stroke="#8B5CF6" stroke-width="1"/>
+  <text x="620" y="600" text-anchor="middle" font-size="10" font-weight="600" fill="#6D28D9">KServe InferenceService</text>
+  <text x="620" y="614" text-anchor="middle" font-size="9" fill="#7C3AED">Llama 3.1-8B via vLLM</text>
+  <text x="620" y="626" text-anchor="middle" font-size="9" fill="#7C3AED">Scale-to-zero (minReplicas: 0)</text>
+</svg>
