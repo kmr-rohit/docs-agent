@@ -26,16 +26,19 @@ def _init():
         client = MilvusClient(uri=MILVUS_URI, user=MILVUS_USER, password=MILVUS_PASSWORD)
 
 
-def _search_collection(collection_name: str, query: str, top_k: int, output_fields: list[str]) -> list[dict]:
+def _search_collection(collection_name: str, query: str, top_k: int, output_fields: list[str], filter_expr: str = "") -> list[dict]:
     """Shared helper: encode query and search a Milvus collection."""
     _init()
     embedding = model.encode(query).tolist()
-    hits = client.search(
-        collection_name=collection_name,
-        data=[embedding],
-        limit=top_k,
-        output_fields=output_fields,
-    )[0]
+    search_params = {
+        "collection_name": collection_name,
+        "data": [embedding],
+        "limit": top_k,
+        "output_fields": output_fields,
+    }
+    if filter_expr:
+        search_params["filter"] = filter_expr
+    hits = client.search(**search_params)[0]
     return hits
 
 
@@ -71,7 +74,7 @@ def search_kubeflow_docs(query: str, top_k: int = 5) -> str:
 
 
 @mcp.tool()
-def search_kubeflow_code(query: str, top_k: int = 5) -> str:
+def search_kubeflow_code(query: str, top_k: int = 5, resource_kind: str = "") -> str:
     """Search Kubeflow code and YAML manifests using semantic similarity.
 
     Use this tool when the user asks about Kubernetes manifests, YAML
@@ -81,15 +84,23 @@ def search_kubeflow_code(query: str, top_k: int = 5) -> str:
     Args:
         query: The search query about Kubeflow code or manifests.
         top_k: Number of results to return (default 5).
+        resource_kind: Optional filter by Kubernetes resource kind
+            (e.g., "Deployment", "Service", "ConfigMap", "StatefulSet",
+            "ServiceAccount", "ClusterRole", "Role", "RoleBinding").
+            When set, only chunks matching this exact kind are returned.
+            For Python code use "function", "class", or "module".
+            Leave empty to search all resource types.
 
     Returns:
         Formatted search results with code content, resource metadata,
         and citation URLs.
     """
+    filter_expr = f"resource_kind == '{resource_kind}'" if resource_kind else ""
     hits = _search_collection(
         CODE_COLLECTION_NAME, query, top_k,
         ["content_text", "citation_url", "file_path", "resource_kind",
          "resource_name", "resource_namespace", "file_type"],
+        filter_expr=filter_expr,
     )
 
     if not hits:
