@@ -22,7 +22,7 @@ The goal is to evolve `kubeflow/docs-agent` from a single-tool RAG system into a
 6. **GitHub ETL** for issues and PRs (daily sync)
 7. **Feedback loop** for golden dataset accumulation
 
-**What exists today:** Single-tool MCP server (`search_kubeflow_docs`), docs ingestion pipeline (KFP), unwired `download_github_issues` component, Kagent Agent CRD with Groq, zero tests.
+**What exists today:** Three-tool MCP server (`search_kubeflow_docs`, `search_github_issues`, `search_kubeflow_code`), docs/issues/code ingestion pipelines (KFP), Kagent Agent CRD with multi-tool routing on Groq (qwen/qwen3-32b), 71 tests locally (not yet merged).
 
 ---
 
@@ -30,8 +30,8 @@ The goal is to evolve `kubeflow/docs-agent` from a single-tool RAG system into a
 
 | KEP Requirement | Current State | Gap |
 |----------------|---------------|-----|
-| Agentic architecture (Kagent) | Single-tool MCP server + Kagent CRD | No multi-tool routing, no issues/code search |
-| Ingestion pipelines for Golden Data | Docs pipeline works; issues component exists but unwired | Issues pipeline not connected; code pipeline missing entirely |
+| Agentic architecture (Kagent) | 3-tool MCP server + Kagent CRD with multi-tool routing | Multi-tool calls depend on LLM reasoning quality |
+| Ingestion pipelines for Golden Data | Docs + issues + code pipelines all working on OCI | Expand code ingestion to more repos; PR ETL not started |
 | KServe serving with scale-to-zero | InferenceService exists (Llama 3.1-8B) | `minReplicas: 0` not configured; cold start unaddressed |
 | Terraform/OCI deployment reference | Deployed with @jaiakash via [deploy-kubeflow](https://github.com/jaiakash/deploy-kubeflow) | Upstream Terraform modules + docs needed |
 | Automated testing & eval | Zero tests in repo | Need unit tests, integration tests, RAGAS eval pipeline |
@@ -62,11 +62,11 @@ The goal is to evolve `kubeflow/docs-agent` from a single-tool RAG system into a
 
 ### Open / Under-Claimed Areas
 
-1. **GitHub Issues ingestion pipeline** — component exists, needs wiring + collection
-2. **Code ingestion (YAML/AST-aware)** — entirely new, KEP Phase 1 deliverable
+1. ~~**GitHub Issues ingestion pipeline**~~ — ✅ Done (PR #140)
+2. ~~**Code ingestion (YAML/AST-aware)**~~ — ✅ Done (PR #143)
 3. **GitHub PR ETL pipeline** — specified in KEP but not started
 4. **Developer IDE mode** — MCP for Cursor/Claude Desktop (Phase 1 KEP deliverable)
-5. **Tests** — zero test files in repo (high-impact, low-competition)
+5. **Tests** — 71 tests built locally, ready to PR on `feat/test-infrastructure`
 6. **Milvus partition isolation** — Issue #10, foundational
 7. **Schema convergence** — no decision between flexible vs explicit schema
 8. **Feedback logging endpoint** — needed for golden dataset
@@ -274,37 +274,36 @@ def search_github_issues(query: str, repo: str = "", state: str = "", top_k: int
 
 ---
 
-## Phase 3: Code Ingestion Pipeline (KEP Phase 1 Deliverable, Unclaimed)
+## Phase 3: Code Ingestion Pipeline (KEP Phase 1 Deliverable) ✅ DONE
 
-This is the highest-value unclaimed work. The KEP explicitly requires code ingestion for `kubeflow/manifests` and nobody has started it.
+> **PR:** [#143 — feat: YAML/code ingestion pipeline + search_kubeflow_code MCP tool](https://github.com/kubeflow/docs-agent/pull/143)
+> **Branch:** `feat/code-pipeline-clean`
+> **Live tested:** OCI cluster — ingested 279 YAML files from `kubeflow/manifests` → `applications/pipeline/upstream` into 477 chunks in `code_rag` collection
+>
+> **Key learnings from live testing:**
+> - CRI-O on OCI requires fully qualified Docker image names (`docker.io/pytorch/pytorch:...`, not `pytorch/pytorch:...`)
+> - `sentence-transformers` latest pulls incompatible `transformers` version on PyTorch 2.3 base — pinned to `sentence-transformers==3.3.1` + `transformers==4.44.2`
+> - `langchain.text_splitter` moved to `langchain-text-splitters` package in newer versions
+> - Repo directory structure is `applications/` not `apps/` in `kubeflow/manifests`
+> - Pure semantic search confuses `Service` vs `ServiceAccount` — added `resource_kind` filter parameter to disambiguate
+> - Single-tool invocation missed cross-domain queries — updated Agent CRD with multi-tool strategy (call both tools when confidence is low)
 
-### PR 4: "Add YAML/Kustomize-aware code ingestion pipeline"
+### PR 4+5 (combined): "YAML/code ingestion pipeline + `search_kubeflow_code` MCP tool"
 
-**Files to create:**
+**Files created:**
 
 | File | Purpose |
 |------|---------|
-| `pipelines/code-pipeline.py` | New KFP pipeline |
-| `pipelines/yaml_parser.py` | Testable pure functions for YAML/AST parsing |
+| `pipelines/code-pipeline.py` | 3-step KFP pipeline: download → chunk+embed → store in Milvus |
+| `pipelines/code_utils.py` | YAML-aware + Python AST-aware chunking utilities |
 
-**New component: `download_github_code`**
-- Similar to `download_github_directory` but targets `.yaml`, `.yml`, `.py`, `.json`
-- Filters: skip files > 100KB (binary artifacts, generated files)
-- Target repo: `kubeflow/manifests` (Kustomize overlays)
-
-**New component: `chunk_yaml_resources`** (the hard piece)
-
-YAML-aware chunking:
-- Split multi-document YAML at `---` boundaries (each K8s resource = one chunk)
-- For each YAML document, extract: `apiVersion`, `kind`, `metadata.name`, `metadata.namespace`
-- Store as searchable fields in Milvus
-- If single YAML doc exceeds chunk_size (rare for K8s resources), fall back to `RecursiveCharacterTextSplitter`
-- For `kustomization.yaml` files, preserve entire file as one chunk (small, losing structure hurts retrieval)
-
-Python AST handling:
-- Use `ast` module: each function/class = one chunk with name + docstring + signature
-- File path and line range stored as metadata
-- If AST fails (syntax errors), fall back to text chunking
+**What was built:**
+- `download_github_code` — recursive GitHub API file fetcher with rate limit handling, targets `.yaml`, `.yml`, `.py`, `.json`
+- `chunk_and_embed_code` — YAML-aware (splits at `---`, extracts `kind`, `name`, `namespace` via `yaml.safe_load`), Python AST-aware (splits at function/class boundaries), JSON (single chunk), with `RecursiveCharacterTextSplitter` fallback for oversized chunks
+- `store_code_milvus` — creates `code_rag` collection with extended schema
+- `search_kubeflow_code` MCP tool with optional `resource_kind` filter (e.g., "Service", "Deployment", "ConfigMap")
+- `_search_collection()` shared helper with filter expression support (DRY refactor)
+- Agent CRD with multi-tool strategy: call both tools when query spans docs and code, or when confidence is low
 
 **Milvus collection: `code_rag`**
 
@@ -314,46 +313,18 @@ Python AST handling:
 | file_unique_id | VARCHAR(512) | |
 | repo_name | VARCHAR(256) | |
 | file_path | VARCHAR(512) | |
-| resource_kind | VARCHAR(128) | Deployment, Service, etc. |
-| resource_name | VARCHAR(256) | metadata.name |
+| file_name | VARCHAR(256) | |
+| resource_kind | VARCHAR(128) | Deployment, Service, ConfigMap, function, class, etc. |
+| resource_name | VARCHAR(256) | metadata.name or function/class name |
 | resource_namespace | VARCHAR(256) | metadata.namespace |
-| file_type | VARCHAR(64) | yaml, python, kustomize, json |
+| file_type | VARCHAR(64) | yaml, kustomize, python, json, text |
 | citation_url | VARCHAR(1024) | |
 | chunk_index | INT64 | |
 | content_text | VARCHAR(2000) | |
-| vector | FLOAT_VECTOR(768) | |
+| vector | FLOAT_VECTOR(768) | all-mpnet-base-v2 |
 | last_updated | INT64 | |
 
-**`pipelines/yaml_parser.py`** — testable pure functions:
-- `parse_yaml_documents(content: str) -> list[dict]` — splits on `---`, parses with `yaml.safe_load`, extracts K8s metadata
-- `parse_python_ast(content: str, file_path: str) -> list[dict]` — AST extraction
-
-**Tests:** `tests/test_yaml_parser.py` — multi-doc YAML splitting, K8s metadata extraction, invalid YAML handling, Python AST extraction, fallback when AST fails.
-
-**Dependencies:** PR 1 (test framework). Independent of PRs 2-3.
-**Risk:** Medium-high. YAML parsing edge cases (anchors, aliases, non-K8s YAML). Mitigate with `yaml.safe_load` (rejects custom tags) + graceful fallback to text chunking.
-**Estimated complexity:** Large (~400 lines pipeline, ~150 lines parser, ~200 lines tests)
-
-### PR 5: "Add `search_kubeflow_code` MCP tool"
-
-**Modify:** `kagent-feast-mcp/mcp-server/server.py`
-
-```python
-@mcp.tool()
-def search_kubeflow_code(query: str, resource_kind: str = "", file_type: str = "", top_k: int = 5) -> str:
-    """Search Kubeflow Kubernetes manifests, Kustomize overlays, and Python scripts."""
-```
-
-Uses `_search_collection` helper from PR 3. Optional filters: `resource_kind`, `file_type`.
-
-**Update Agent CRD** with third tool. System prompt now describes 3 tools:
-- `search_kubeflow_docs` → official docs, setup, concepts
-- `search_github_issues` → bugs, errors, workarounds
-- `search_kubeflow_code` → K8s manifests, Kustomize overlays, deployment configs, Python scripts
-
-**Dependencies:** PR 3 (`_search_collection` refactor), PR 4 (`code_rag` collection)
-**Risk:** Low (same pattern as PR 3)
-**Estimated complexity:** Small (~40 lines server, ~30 lines manifest, ~50 lines tests)
+**Semantic search quality:** "metadata grpc service" → `Service/metadata-grpc-service` at 0.73 cosine similarity. `resource_kind` filter eliminates ServiceAccount/Service confusion.
 
 ---
 
@@ -413,9 +384,8 @@ Ordered by dependency chain and merge velocity:
 |---|-----|------------|------|------|--------|
 | 1 | Test infrastructure | MCP server + pipeline unit tests, CI workflow | None | S-M | Ready to PR |
 | 2+3 | Issues pipeline + MCP tool | [PR #140](https://github.com/kubeflow/docs-agent/pull/140) — `search_github_issues` + pipeline + Agent CRD | None | M | **Open PR** |
-| 4 | Code pipeline | YAML/AST-aware chunker + `code_rag` collection | None | L | Not started |
-| 5 | Code MCP tool | `search_kubeflow_code` + Agent CRD update | PR 2+3, 4 | S | Not started |
-| 6 | IDE integration | Cursor/Claude Desktop configs + developer docs | PR 2+3, 5 | S | Not started |
+| 4+5 | Code pipeline + MCP tool | [PR #143](https://github.com/kubeflow/docs-agent/pull/143) — YAML/AST-aware chunker + `search_kubeflow_code` + `resource_kind` filter + multi-tool strategy | None | L | **Open PR** |
+| 6 | IDE integration | Cursor/Claude Desktop configs + developer docs | PR 2+3, 4+5 | S | Not started |
 | 7 | Feedback logging | `log_feedback` MCP tool + export pipeline | PR 1 | S | Not started |
 
 **Parallelization:** PRs 2 and 4 can be developed simultaneously (no dependency). PR 7 can be developed alongside Phases 2-3.
@@ -445,8 +415,9 @@ Ordered by dependency chain and merge velocity:
 - [x] `issues_rag` pipeline runs successfully on test cluster (1,631 chunks indexed across 6 repos on OCI)
 - [x] MCP server exposes 2 tools (`search_kubeflow_docs`, `search_github_issues`) — [PR #140](https://github.com/kubeflow/docs-agent/pull/140)
 - [x] Agent CRD updated with 2 tools and two-tool routing system prompt
-- [ ] MCP server exposes 3rd tool (`search_kubeflow_code`)
-- [ ] `code_rag` pipeline correctly chunks YAML at resource boundaries
+- [x] MCP server exposes 3rd tool (`search_kubeflow_code`) with `resource_kind` filter — [PR #143](https://github.com/kubeflow/docs-agent/pull/143)
+- [x] `code_rag` pipeline correctly chunks YAML at resource boundaries (477 chunks from 279 files, K8s metadata extracted)
+- [x] Agent CRD updated with multi-tool strategy (call both tools when confidence is low)
 - [ ] IDE configuration works in Cursor and/or Claude Desktop
 - [ ] All PRs have passing CI tests
 - [x] Zero overlap with other contributors' claimed work
@@ -457,12 +428,15 @@ Ordered by dependency chain and merge velocity:
 
 | File | Role | Lines |
 |------|------|-------|
-| `kagent-feast-mcp/mcp-server/server.py` | MCP server, single tool | 67 |
-| `pipelines/kubeflow-pipeline.py` | Docs pipeline + unwired issues component | ~450 |
+| `kagent-feast-mcp/mcp-server/server.py` | MCP server, 3 tools (docs, issues, code) with `resource_kind` filter | ~127 |
+| `pipelines/kubeflow-pipeline.py` | Docs ingestion pipeline | ~450 |
+| `pipelines/issues-pipeline.py` | Issues ingestion pipeline (PR #140) | ~300 |
+| `pipelines/code-pipeline.py` | Code/YAML ingestion pipeline (PR #143) | ~498 |
+| `pipelines/code_utils.py` | YAML/AST-aware chunking utilities | ~271 |
 | `pipelines/incremental-pipeline.py` | Incremental docs update pipeline | ~401 |
 | `server/app.py` | WebSocket server with tool calling | ~455 |
 | `server-https/app.py` | FastAPI HTTP server with SSE | ~463 |
-| `kagent-feast-mcp/manifests/kagent/setup.yaml` | Agent CRD + ModelConfig + RemoteMCPServer | ~85 |
+| `kagent-feast-mcp/manifests/kagent/setup.yaml` | Agent CRD + ModelConfig + RemoteMCPServer (multi-tool strategy) | ~99 |
 | `kagent-feast-mcp/mcp-server/Dockerfile` | MCP server container | 17 |
 | `.github/workflows/build-mcp-image.yml` | CI for MCP image | ~58 |
 
@@ -470,7 +444,9 @@ Ordered by dependency chain and merge velocity:
 
 ## Immediate Next Steps
 
-1. **Get PR #140 reviewed and merged** — issues pipeline + MCP tool is open, live-tested on OCI cluster
-2. **Open PR for test infrastructure** — 71 tests across 4 files, CI workflow, ready to submit on `feat/test-infrastructure` branch
-3. **Start Phase 3: Code ingestion pipeline** — YAML/AST-aware chunking for `kubeflow/manifests`
-4. **Post update on Issue #59** — share PR #140 and live deployment results with mentors
+1. **Get PR #140 reviewed and merged** — issues pipeline + MCP tool, live-tested on OCI
+2. **Get PR #143 reviewed and merged** — code pipeline + `search_kubeflow_code` + `resource_kind` filter, live-tested on OCI
+3. **Open PR for test infrastructure** — 71 tests across 4 files, CI workflow, ready on `feat/test-infrastructure` branch
+4. **Expand code ingestion** — add more repos (`kubeflow/pipelines`, `kubeflow/katib`, `kserve/kserve`) and directories
+5. **Start Phase 4: IDE integration** — Cursor/Claude Desktop MCP configs
+6. **Post update on Issue #59** — share PR #143 and multi-tool agent results with mentors

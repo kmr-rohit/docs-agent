@@ -57,11 +57,14 @@ All work below is committed locally on my branch and ready for PR submission. I 
 | PR / Commit | Description | Status |
 |-------------|-------------|--------|
 | [PR #140](https://github.com/kubeflow/docs-agent/pull/140) | `search_github_issues` MCP tool + issues ingestion pipeline + Agent CRD update | **Open PR** |
+| [PR #143](https://github.com/kubeflow/docs-agent/pull/143) | YAML/code ingestion pipeline + `search_kubeflow_code` MCP tool + `resource_kind` filter + multi-tool strategy | **Open PR** |
 | `ci: add GitHub Actions workflow to build and push MCP server image` | Container build CI | Committed |
 | `fix: read config from env vars in MCP server` | Replaced hardcoded credentials with env vars | Committed |
 | `feat: add optional LLM_API_KEY support for non-KServe endpoints` | API key support for external LLM providers | Committed |
 
-**Live-tested on OCI cluster:** 1,631 real GitHub issue chunks indexed across 6 repos. Agent correctly routes between docs and issues tools using `qwen/qwen3-32b` on Groq.
+**Live-tested on OCI cluster:**
+- 1,631 real GitHub issue chunks indexed across 6 repos. Agent correctly routes between docs and issues tools using `qwen/qwen3-32b` on Groq.
+- 477 code chunks from 279 YAML files in `kubeflow/manifests`. Semantic search returns `Service/metadata-grpc-service` at 0.73 cosine similarity. `resource_kind` filter disambiguates Service vs ServiceAccount. Multi-tool strategy ensures ambiguous queries search both docs and code.
 
 ### 2d. Test Suite + Pipelines Built Locally
 
@@ -149,70 +152,50 @@ Wires the existing `download_github_issues` component into a complete KFP pipeli
 
 ---
 
-### Phase 2: Code Ingestion (Weeks 4-7) — The Hard Technical Work
+### Phase 2: Code Ingestion (Weeks 4-7) — ✅ DONE
 
-KEP Phase 1 explicitly requires code ingestion for `kubeflow/manifests`.
+> **PR:** [#143](https://github.com/kubeflow/docs-agent/pull/143) — live-tested on OCI cluster with 279 files → 477 chunks from `kubeflow/manifests`
 
-#### Deliverable 4: YAML/AST-aware Code Ingestion Pipeline
+#### Deliverable 4: YAML/AST-aware Code Ingestion Pipeline ✅
 
-**New files:** `pipelines/code-pipeline.py`, `pipelines/yaml_parser.py`
+**Files built:** `pipelines/code-pipeline.py` (498 lines), `pipelines/code_utils.py` (271 lines)
 
-**YAML-aware chunking (the core challenge):**
+**YAML-aware chunking (implemented and tested):**
 
-Naive `RecursiveCharacterTextSplitter` destroys YAML. A 1000-char chunk can split a Deployment's `resources.limits` from its `metadata.name`, making the chunk useless for retrieval. My approach:
+1. Splits multi-document YAML at `---` boundaries. Each K8s resource = one chunk.
+2. `yaml.safe_load` extracts `kind`, `metadata.name`, `metadata.namespace` — stored as searchable fields in Milvus.
+3. Kustomization files detected by filename and tagged as `file_type: "kustomize"`.
+4. Oversized chunks fall back to `RecursiveCharacterTextSplitter`.
+5. Helm templates with custom tags gracefully fall back to text chunking via `yaml.YAMLError` catch.
 
-1. Split multi-document YAML at `---` boundaries. Each K8s resource = one chunk.
-2. For each YAML document, `yaml.safe_load` and extract: `apiVersion`, `kind`, `metadata.name`, `metadata.namespace`.
-3. Store as searchable fields in Milvus.
-4. If single YAML doc exceeds chunk_size (rare for K8s resources, common for CRDs), fall back to `RecursiveCharacterTextSplitter` with resource header prepended to every sub-chunk.
-5. For `kustomization.yaml` files, preserve entire file as one chunk (they are small, and splitting loses overlay structure).
+**Python AST handling (implemented):**
+- `ast` module splits at function/class boundaries. Extracts module header, function names, class names.
+- Decorators included with their functions. Falls back to whole-file on `SyntaxError`.
 
-**Python AST handling:**
-- Use `ast` module: each function/class = one chunk with name + docstring + signature.
-- File path and line range stored as metadata.
-- If AST parsing fails (syntax errors, template files), fall back to text chunking.
+**Bugs found and fixed during OCI cluster testing:**
+- CRI-O requires fully qualified Docker image names (`docker.io/pytorch/pytorch:...`)
+- `sentence-transformers` latest pulls incompatible `transformers` on PyTorch 2.3 — pinned versions
+- `langchain.text_splitter` moved to `langchain-text-splitters` in newer langchain
+- Repo path is `applications/` not `apps/` in `kubeflow/manifests`
 
-**Why `yaml.safe_load` over `ruamel.yaml`:**
-- Rejects custom tags (e.g., Helm `{{ .Values }}` templates) cleanly instead of crashing.
-- Lighter dependency. When `safe_load` fails, we fall back to text chunking — handles the 90% case well.
-- Haroon0x's Issue #120 advocates for regex-based semantic splitting as an alternative to full AST. I'll start with `yaml.safe_load` for clean YAML and regex splitting (`---` boundaries) for templated YAML as fallback.
+**Target repo:** `kubeflow/manifests` → `applications/pipeline/upstream`. Pipeline is parameterized to add more repos/directories.
 
-**New Milvus collection: `code_rag`**
-
-| Field | Type | Notes |
-|-------|------|-------|
-| id | INT64 | auto PK |
-| file_unique_id | VARCHAR(512) | |
-| repo_name | VARCHAR(256) | |
-| file_path | VARCHAR(512) | |
-| resource_kind | VARCHAR(128) | Deployment, Service, etc. |
-| resource_name | VARCHAR(256) | metadata.name |
-| resource_namespace | VARCHAR(256) | metadata.namespace |
-| file_type | VARCHAR(64) | yaml, python, kustomize |
-| citation_url | VARCHAR(1024) | |
-| chunk_index | INT64 | |
-| content_text | VARCHAR(2000) | |
-| vector | FLOAT_VECTOR(768) | all-mpnet-base-v2 |
-| last_updated | INT64 | |
-
-**Tests:** `tests/test_yaml_parser.py` — multi-doc YAML splitting, K8s metadata extraction, invalid YAML handling, Python AST extraction, fallback when parsing fails.
-
-**Target repo:** `kubeflow/manifests` (Kustomize overlays). Pipeline is parameterized to add repos later.
-
-#### Deliverable 5: `search_kubeflow_code` MCP Tool
+#### Deliverable 5: `search_kubeflow_code` MCP Tool ✅
 
 ```python
 @mcp.tool()
-def search_kubeflow_code(query: str, resource_kind: str = "", file_type: str = "", top_k: int = 5) -> str:
-    """Search Kubeflow Kubernetes manifests, Kustomize overlays, and Python scripts."""
+def search_kubeflow_code(query: str, top_k: int = 5, resource_kind: str = "") -> str:
+    """Search Kubeflow code and YAML manifests using semantic similarity."""
 ```
 
-Uses `_search_collection` helper from the existing refactor. Optional filters: `resource_kind`, `file_type`.
+- `resource_kind` filter disambiguates semantically similar types (e.g., `Service` vs `ServiceAccount`)
+- Uses shared `_search_collection()` helper with filter expression support
 
-**Agent CRD update** — 3 tools + routing system prompt:
+**Agent CRD update** — 3 tools + multi-tool strategy:
 - `search_kubeflow_docs` → official docs, setup, concepts
 - `search_github_issues` → bugs, errors, workarounds
 - `search_kubeflow_code` → K8s manifests, Kustomize overlays, deployment configs
+- **Multi-tool strategy:** call both tools when query spans docs and code, or when confidence is low
 
 ---
 
