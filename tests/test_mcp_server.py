@@ -237,8 +237,8 @@ class TestSearchKubeflowDocs:
 class TestSearchCollection:
     """Tests for the _search_collection shared helper."""
 
-    def test_returns_no_results_when_empty(self, inject_mocks):
-        """Should return 'No results found' when Milvus returns empty."""
+    def test_returns_empty_list_when_no_results(self, inject_mocks):
+        """Should return empty list when Milvus returns no hits."""
         mock_client, _ = inject_mocks
         mock_client.search.return_value = [[]]
 
@@ -248,7 +248,7 @@ class TestSearchCollection:
             top_k=5,
             output_fields=["content_text", "citation_url"],
         )
-        assert result == "No results found for your query."
+        assert result == []
 
     def test_passes_filter_expr_to_milvus(self, inject_mocks):
         """Should pass filter expression to Milvus search when provided."""
@@ -280,8 +280,8 @@ class TestSearchCollection:
 
         assert "filter" not in mock_client.search.call_args.kwargs
 
-    def test_renders_extra_fields(self, inject_mocks):
-        """Should render non-standard fields in output."""
+    def test_returns_raw_hits_with_entity_data(self, inject_mocks):
+        """Should return raw Milvus hits with entity data intact."""
         mock_client, _ = inject_mocks
         mock_client.search.return_value = [[{
             "id": 1,
@@ -300,19 +300,22 @@ class TestSearchCollection:
             output_fields=["content_text", "citation_url", "issue_number"],
         )
 
-        assert "**issue_number:** 42" in result
+        assert len(result) == 1
+        assert result[0]["entity"]["issue_number"] == 42
+        assert result[0]["entity"]["content_text"] == "Test content"
+        assert result[0]["distance"] == 0.9
 
 
 class TestSearchGithubIssues:
     """Tests for the search_github_issues MCP tool."""
 
     def test_returns_no_results_when_empty(self, inject_mocks):
-        """Should return 'No results found' when no issues match."""
+        """Should return 'No issues found' when no issues match."""
         mock_client, _ = inject_mocks
         mock_client.search.return_value = [[]]
 
         result = server.search_github_issues("GPU OOM error")
-        assert result == "No results found for your query."
+        assert result == "No issues found for your query."
 
     def test_returns_formatted_results(self, inject_mocks, sample_issues_milvus_hits):
         """Should return formatted results with issue-specific fields."""
@@ -327,12 +330,12 @@ class TestSearchGithubIssues:
         assert "KServe model not loading" in result
 
     def test_includes_issue_number(self, inject_mocks, sample_issues_milvus_hits):
-        """Should include issue_number in formatted output."""
+        """Should include issue number in formatted output."""
         mock_client, _ = inject_mocks
         mock_client.search.return_value = sample_issues_milvus_hits
 
         result = server.search_github_issues("test")
-        assert "**issue_number:** 42" in result
+        assert "**Issue:** #42" in result
 
     def test_includes_issue_labels(self, inject_mocks, sample_issues_milvus_hits):
         """Should include issue_labels in formatted output."""

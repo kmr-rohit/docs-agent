@@ -75,7 +75,7 @@ def search_kubeflow_docs(query: str, top_k: int = 5) -> str:
 
 
 @mcp.tool()
-def search_github_issues(query: str, top_k: int = 5) -> str:
+def search_github_issues(query: str, top_k: int = 5, repo: str = "", state: str = "") -> str:
     """Search Kubeflow GitHub issues for bug reports, troubleshooting,
     and community solutions. Searches across all repositories including
     kubeflow/kubeflow, kubeflow/pipelines, kubeflow/manifests,
@@ -84,14 +84,24 @@ def search_github_issues(query: str, top_k: int = 5) -> str:
     Args:
         query: Search query about errors, bugs, or issues.
         top_k: Number of results to return (default 5).
+        repo: Optional filter by repository (e.g., "kubeflow/kubeflow").
+        state: Optional filter by issue state ("open" or "closed").
 
     Returns:
         Formatted search results with content and GitHub issue URLs.
     """
+    filters = []
+    if repo:
+        filters.append(f'repo_name == "{repo}"')
+    if state:
+        filters.append(f'issue_state == "{state}"')
+    filter_expr = " and ".join(filters)
+
     hits = _search_collection(
         ISSUES_COLLECTION_NAME, query, top_k,
         ["content_text", "citation_url", "repo_name",
          "issue_number", "issue_state", "issue_labels"],
+        filter_expr=filter_expr,
     )
 
     if not hits:
