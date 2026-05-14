@@ -18,9 +18,9 @@ The MCP server at `kagent-feast-mcp/mcp-server/server.py` is the main thing to v
 |---|---|---|
 | `search_kubeflow_docs` | `docs_rag` | Populated and loaded |
 | `search_github_issues` | `issues_rag` | Populated and loaded |
-| `search_kubeflow_code` | `code_rag` | Currently empty — acceptable until code pipeline is rerun |
+| `search_kubeflow_code` | `code_rag` | Collection may exist with **0** entities until the code ingestion pipeline is rerun |
 
-The server uses FastMCP with `streamable-http` transport on port 8000. The MCP endpoint is at `/mcp`.
+The server uses FastMCP with `streamable-http` transport on port 8000. The MCP endpoint is at `/mcp`. The checked-in `kagent-feast-mcp/mcp-server/server.py` may lag the cluster image (for example, additional tools); validate with `tools/list` against the live deployment.
 
 ### Code change → validation loop
 
@@ -88,30 +88,64 @@ The OKE cluster uses `oci ce cluster generate-token` as the kubectl exec credent
 
 | Secret | Description |
 |---|---|
-| `KUBECONFIG_CONTENT` | Raw kubeconfig YAML content (newlines will be reconstructed automatically) |
+| `KUBECONFIG_CONTENT` | Raw kubeconfig YAML (prefer real newlines; if the secret is a single collapsed line, see **Kubeconfig repair** below) |
 | `OCI_CONFIG_B64` | Base64-encoded `~/.oci/config` |
 | `OCI_API_KEY_B64` | Base64-encoded OCI API private key PEM |
 
-Setup steps after secrets are injected:
+#### Recommended setup script (strict)
+
+Use `set -euo pipefail` and write files exactly as provided (this matches the project’s documented flow):
+
 ```bash
-mkdir -p ~/.kube ~/.oci
-echo -e "$KUBECONFIG_CONTENT" > ~/.kube/config
-chmod 600 ~/.kube/config
-echo "$OCI_CONFIG_B64" | base64 -d > ~/.oci/config
-echo "$OCI_API_KEY_B64" | base64 -d > ~/.oci/oci_api_key.pem
-chmod 600 ~/.oci/config ~/.oci/oci_api_key.pem
-# Fix key_file path to VM location:
-sed -i 's|key_file=.*|key_file=/home/ubuntu/.oci/oci_api_key.pem|' ~/.oci/config
+set -euo pipefail
+
+: "${OCI_CONFIG_B64:?missing OCI_CONFIG_B64}"
+: "${OCI_API_KEY_B64:?missing OCI_API_KEY_B64}"
+: "${KUBECONFIG_CONTENT:?missing KUBECONFIG_CONTENT}"
+
+mkdir -p ~/.oci ~/.kube
+
+printf '%s' "$OCI_CONFIG_B64" | base64 -d > ~/.oci/config
+printf '%s' "$OCI_API_KEY_B64" | base64 -d > ~/.oci/oci_api_key.pem
+printf '%s' "$KUBECONFIG_CONTENT" > ~/.kube/config
+
+chmod 600 ~/.oci/config ~/.oci/oci_api_key.pem ~/.kube/config
+
+# oci-cli lives in the repo venv in Cloud Agent VMs; add to PATH for this shell
+export PATH="/workspace/.venv/bin:$PATH"
+
+oci --profile KUBEFLOW-GSCO26 os ns get
+
+kubectl config current-context
+kubectl get pods -n docs-agent
+kubectl get svc -n docs-agent
 ```
 
-**Important:** the kubeconfig YAML may arrive as a single line (newlines collapsed to spaces). The setup script reconstructs proper YAML formatting. If `kubectl config current-context` fails with a YAML parse error, check the kubeconfig formatting.
+#### Post-setup fixes (common in Cloud Agent VMs)
 
-**Gotcha:** verify the OCI API key fingerprint matches the config:
-```bash
-openssl pkey -in ~/.oci/oci_api_key.pem -pubout -outform DER 2>/dev/null | openssl md5 -c | awk '{print $2}'
-grep fingerprint ~/.oci/config
-```
-If these don't match, the key file and config are mismatched and all cluster operations will fail with 401.
+1. **`key_file` path** — decoded `~/.oci/config` may still point at a laptop path (for example `/Users/.../.oci/oci_api_key.pem`). Point it at the VM key:
+   ```bash
+   sed -i 's|^key_file=.*|key_file=/home/ubuntu/.oci/oci_api_key.pem|' ~/.oci/config
+   chmod 600 ~/.oci/config ~/.oci/oci_api_key.pem
+   ```
+
+2. **Named OCI profile only** — if `~/.oci/config` has only `[KUBEFLOW-GSCO26]` (no `[DEFAULT]`), `kubectl`’s bare `oci ...` exec will fail with “config invalid / missing DEFAULT”. Either duplicate that profile as `[DEFAULT]`, **or** add this under the kubeconfig user’s `exec:` block (same indentation as `env:`):
+   ```yaml
+   env:
+   - name: OCI_CLI_PROFILE
+     value: KUBEFLOW-GSCO26
+   ```
+   (Keep `interactiveMode` / `provideClusterInfo` if your kubeconfig already has them.)
+
+3. **Fingerprint** — the private key must match the fingerprint in the profile you use:
+   ```bash
+   openssl pkey -in ~/.oci/oci_api_key.pem -pubout -outform DER 2>/dev/null | openssl md5 -c | awk '{print $2}'
+   grep fingerprint ~/.oci/config
+   ```
+
+#### Kubeconfig repair (collapsed single-line YAML)
+
+If `kubectl` errors with `yaml: mapping values are not allowed in this context`, `KUBECONFIG_CONTENT` is often one long line (spaces instead of newlines). Re-save the kubeconfig from the OCI console with normal newlines, **or** repair locally (the Cloud Agent previously used a small Python normalizer keyed off OKE’s usual `apiVersion` / `clusters` / `exec` structure). After repair, re-run `chmod 600 ~/.kube/config`.
 
 ### Cluster inspection commands
 
@@ -124,19 +158,47 @@ kubectl get svc -n docs-agent | grep -i milvus
 
 ### Milvus validation from inside the cluster
 
+Milvus service in `docs-agent` is typically `my-release-milvus` (`kubectl get svc -n docs-agent | grep -i milvus`).
+
+`kubectl run ... --rm -it` fails in non-interactive shells (“`--rm` should only be used for attached containers`”). Prefer creating a short-lived pod, waiting for completion, then reading logs:
+
 ```bash
-kubectl run milvus-check --rm -it --restart=Never -n docs-agent \
+kubectl delete pod milvus-check -n docs-agent --ignore-not-found=true
+kubectl run milvus-check --restart=Never -n docs-agent \
   --image=python:3.11-slim \
   -- bash -c 'pip install -q pymilvus && python -c "
 from pymilvus import connections, utility, Collection
-connections.connect(\"default\", host=\"my-release-milvus.docs-agent.svc.cluster.local\", port=\"19530\", user=\"root\", password=\"Milvus\")
+connections.connect(
+    \"default\",
+    host=\"my-release-milvus.docs-agent.svc.cluster.local\",
+    port=\"19530\",
+    user=\"root\",
+    password=\"Milvus\",
+)
 for name in [\"docs_rag\", \"issues_rag\", \"code_rag\"]:
     print(\"collection\", name, \"exists=\", utility.has_collection(name))
     if utility.has_collection(name):
         c = Collection(name)
         print(\"entities=\", c.num_entities)
 "'
+kubectl wait --for=condition=Ready pod/milvus-check -n docs-agent --timeout=120s
+kubectl wait --for=jsonpath='{.status.phase}'=Succeeded pod/milvus-check -n docs-agent --timeout=300s
+kubectl logs milvus-check -n docs-agent
+kubectl delete pod milvus-check -n docs-agent
 ```
+
+Example output observed in this environment: `docs_rag` and `issues_rag` populated; `code_rag` exists with **0** entities until the code ingestion pipeline is rerun.
+
+### MCP “hello world” (live Milvus + `search_kubeflow_docs`)
+
+End-to-end check against the in-cluster MCP service:
+
+```bash
+kubectl port-forward -n docs-agent svc/mcp-kubeflow-docs 18004:8000 &
+# Then call Streamable HTTP MCP: initialize → notifications/initialized → tools/call
+```
+
+Use `Accept: application/json, text/event-stream`, read `mcp-session-id` / `Mcp-Session-Id` from the `initialize` response headers, then `POST` `tools/call` with `name: search_kubeflow_docs` and `arguments: {"query": "what is kubeflow", "top_k": 3}`. A healthy stack returns ranked doc snippets with `Source:` URLs from `kubeflow.org`.
 
 ### Namespace boundaries
 
