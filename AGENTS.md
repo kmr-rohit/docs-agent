@@ -48,6 +48,38 @@ When code changes are made to the MCP server:
 
 The CI workflow at `.github/workflows/build-mcp-image.yml` automatically builds and pushes to GHCR on pushes to `main` that touch `kagent-feast-mcp/mcp-server/**`.
 
+### Cursor Cloud secrets: autonomous `docker push` + OKE validation
+
+GitHub Container Registry (**ghcr.io**) does **not** use “Docker Hub” credentials. A Cloud Agent needs:
+
+| Secret (suggested name) | Required? | Purpose |
+|---|---|---|
+| `KUBECONFIG_CONTENT` | Yes (already) | `kubectl` access to OKE |
+| `OCI_CONFIG_B64` | Yes (already) | `oci` exec auth for kubeconfig |
+| `OCI_API_KEY_B64` | Yes (already) | Private key for OCI profile |
+| `GHCR_USERNAME` | For push from VM | GitHub username that has **push** rights to `ghcr.io/kmr-rohit/mcp-kubeflow-docs` (often `kmr-rohit`) |
+| `GHCR_TOKEN` | For push from VM | **GitHub Personal Access Token** used as the registry password. Classic PAT: scopes **`write:packages`** and **`read:packages`** (add **`repo`** if the GitHub repo is private). Fine-grained PAT: grant **Packages: Read and write** for the relevant org/user and repository. |
+
+**Login before `docker push`:**
+
+```bash
+echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
+```
+
+**Optional (alternative to pushing from the VM):** store a **`GH_TOKEN`** (PAT with `repo` + `workflow` as needed) if the agent should call `gh workflow run` to trigger `.github/workflows/build-mcp-image.yml`; GitHub Actions then pushes using `GITHUB_TOKEN` inside the workflow (no VM push secret needed for the push itself, only for triggering).
+
+**If the GHCR package is private:** the OKE cluster must pull with an **`imagePullSecret`** in `docs-agent` (create once with `kubectl create secret docker-registry ...` using the same or a read-only PAT). That is cluster configuration, not necessarily a Cursor secret, unless you want the agent to create/rotate it.
+
+**Feast / gRPC (when you switch the MCP server to Feast online serving over gRPC):** add secrets that match whatever the new code reads, for example:
+
+| Secret (examples) | Purpose |
+|---|---|
+| `FEAST_SERVING_HOST` / `FEAST_SERVING_PORT` or a single `FEAST_GRPC_TARGET` | Online store / serving endpoint (`host:port`) |
+| `FEAST_API_KEY` or `FEAST_AUTH_TOKEN` | If Feast Server or a proxy requires auth |
+| `FEAST_TLS_CA_B64` | PEM of CA for TLS verify, if not using public CAs |
+
+Exact names should follow the env vars you implement in `kagent-feast-mcp/mcp-server/`. Today’s MCP image talks to **Milvus over HTTP** (`MILVUS_URI`); a Feast-gRPC path is a **code + deploy env** change, not something the registry secrets replace.
+
 ### Local Docker validation (without cluster)
 
 You can build and run the MCP container locally to verify the image builds and the FastMCP server starts:
