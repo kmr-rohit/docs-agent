@@ -153,6 +153,7 @@ def chunk_and_embed_code(
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model = SentenceTransformer("sentence-transformers/all-mpnet-base-v2", device=device)
     print(f"Model loaded on {device}")
+    EMBED_BATCH_SIZE = 32
 
     # --- Inline chunking logic (KFP components can't import local modules) ---
 
@@ -335,9 +336,16 @@ def chunk_and_embed_code(
             chunks = chunk_code_file(content, file_path, chunk_size, chunk_overlap)
 
             print(f"File: {file_path} -> {len(chunks)} chunks")
+            if not chunks:
+                continue
 
-            for chunk_idx, chunk in enumerate(chunks):
-                embedding = model.encode(chunk["content"]).tolist()
+            chunk_texts = [chunk["content"] for chunk in chunks]
+            embeddings = model.encode(
+                chunk_texts,
+                batch_size=EMBED_BATCH_SIZE,
+                show_progress_bar=False,
+            )
+            for chunk_idx, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
                 records.append({
                     "file_unique_id": file_unique_id,
                     "repo_name": repo,
@@ -346,7 +354,7 @@ def chunk_and_embed_code(
                     "citation_url": citation_url[:1024],
                     "chunk_index": chunk_idx,
                     "content_text": chunk["content"][:2000],
-                    "embedding": embedding,
+                    "embedding": embedding.tolist(),
                     "resource_kind": chunk["resource_kind"][:128],
                     "resource_name": chunk["resource_name"][:256],
                     "resource_namespace": chunk["resource_namespace"][:256],
@@ -372,19 +380,19 @@ def store_code_milvus(
 ):
     """Store code embeddings in the code_rag Milvus collection.
 
-    Creates the collection with the code_rag schema if it doesn't exist.
-    Uses upsert-style logic: drops and recreates to avoid schema drift.
+    Idempotent upsert: creates collection if absent, deletes old chunks
+    by file_unique_id, then inserts new chunks. Schema version is checked
+    against the existing collection description to detect drift.
     """
     from pymilvus import connections, utility, FieldSchema, CollectionSchema, DataType, Collection
     import json
     from datetime import datetime
 
-    connections.connect("default", host=milvus_host, port=milvus_port)
+    SCHEMA_VERSION = 1
+    SCHEMA_DESCRIPTION = f"RAG collection for Kubeflow code and manifests (v={SCHEMA_VERSION})"
+    DELETE_BATCH_SIZE = 100
 
-    # Drop existing collection to ensure schema matches
-    if utility.has_collection(collection_name):
-        utility.drop_collection(collection_name)
-        print(f"Dropped existing collection: {collection_name}")
+    connections.connect("default", host=milvus_host, port=milvus_port)
 
     # code_rag schema: docs_rag fields + resource_kind, resource_name,
     # resource_namespace, file_type
@@ -406,9 +414,22 @@ def store_code_milvus(
         FieldSchema(name="file_type", dtype=DataType.VARCHAR, max_length=64),
     ]
 
-    schema = CollectionSchema(fields, "RAG collection for Kubeflow code and manifests")
-    collection = Collection(collection_name, schema)
-    print(f"Created new collection: {collection_name}")
+    schema = CollectionSchema(fields, SCHEMA_DESCRIPTION)
+
+    collection_existed = utility.has_collection(collection_name)
+    if collection_existed:
+        collection = Collection(collection_name)
+        existing_desc = collection.description or ""
+        if f"v={SCHEMA_VERSION}" not in existing_desc:
+            raise RuntimeError(
+                f"Schema version mismatch for {collection_name}. "
+                f"Expected v={SCHEMA_VERSION}, found description: '{existing_desc}'. "
+                f"Run a migration job to drop+recreate before re-indexing."
+            )
+        print(f"Using existing collection: {collection_name} (schema v={SCHEMA_VERSION})")
+    else:
+        collection = Collection(collection_name, schema)
+        print(f"Created new collection: {collection_name} (schema v={SCHEMA_VERSION})")
 
     records = []
     timestamp = int(datetime.now().timestamp())
@@ -433,19 +454,50 @@ def store_code_milvus(
             })
 
     if records:
+        if collection_existed and len(collection.indexes) > 0:
+            collection.load()
+            unique_ids = sorted(set(r["file_unique_id"] for r in records))
+            deleted = 0
+            try:
+                for i in range(0, len(unique_ids), DELETE_BATCH_SIZE):
+                    batch_ids = unique_ids[i:i + DELETE_BATCH_SIZE]
+                    quoted = ", ".join(f'"{uid}"' for uid in batch_ids)
+                    expr = f"file_unique_id in [{quoted}]"
+                    old = collection.query(expr=expr, output_fields=["id"], limit=16384)
+                    if old:
+                        collection.delete(expr)
+                        deleted += len(old)
+                if deleted:
+                    collection.flush()
+                    print(f"Deleted {deleted} old chunks for {len(unique_ids)} files")
+            except Exception as e:
+                print(f"ERROR during delete phase: {e}")
+                print(f"Failed batch unique_ids: {unique_ids[i:i + DELETE_BATCH_SIZE]}")
+                raise
+
+        # Insert new chunks (failure-aware)
         batch_size = 1000
-        for i in range(0, len(records), batch_size):
-            batch = records[i:i + batch_size]
-            collection.insert(batch)
+        inserted = 0
+        try:
+            for i in range(0, len(records), batch_size):
+                batch = records[i:i + batch_size]
+                collection.insert(batch)
+                inserted += len(batch)
+            collection.flush()
+        except Exception as e:
+            print(f"ERROR during insert. Inserted={inserted}/{len(records)}. Error: {e}")
+            failed_ids = sorted(set(r["file_unique_id"] for r in records[i:i + batch_size]))
+            print(f"Failed batch starts at record {i}, file_unique_ids in failing batch: {failed_ids}")
+            raise
 
-        collection.flush()
-
-        index_params = {
-            "metric_type": "COSINE",
-            "index_type": "IVF_FLAT",
-            "params": {"nlist": min(1024, len(records))},
-        }
-        collection.create_index("vector", index_params)
+        # Create index if not already present
+        if not collection.has_index():
+            index_params = {
+                "metric_type": "COSINE",
+                "index_type": "IVF_FLAT",
+                "params": {"nlist": min(1024, len(records))},
+            }
+            collection.create_index("vector", index_params)
         collection.load()
         print(f"Inserted {len(records)} records. Total: {collection.num_entities}")
     else:
@@ -463,7 +515,7 @@ def code_rag_pipeline(
     github_token: str = "",
     chunk_size: int = 1000,
     chunk_overlap: int = 100,
-    milvus_host: str = "milvus-standalone-final.docs-agent.svc.cluster.local",
+    milvus_host: str = "my-release-milvus.docs-agent.svc.cluster.local",
     milvus_port: str = "19530",
     collection_name: str = "code_rag"
 ):

@@ -1,5 +1,6 @@
 import os
 import re
+import threading
 
 from fastmcp import FastMCP
 from pymilvus import MilvusClient
@@ -8,7 +9,7 @@ from sentence_transformers import SentenceTransformer
 MILVUS_URI = os.getenv("MILVUS_URI", "http://localhost:19530")
 MILVUS_USER = os.getenv("MILVUS_USER", "root")
 MILVUS_PASSWORD = os.getenv("MILVUS_PASSWORD", "Milvus")
-COLLECTION_NAME = os.getenv("COLLECTION_NAME", "kubeflow_docs_docs_rag")
+COLLECTION_NAME = os.getenv("COLLECTION_NAME", "docs_rag")
 ISSUES_COLLECTION_NAME = os.getenv("ISSUES_COLLECTION_NAME", "issues_rag")
 CODE_COLLECTION_NAME = os.getenv("CODE_COLLECTION_NAME", "code_rag")
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "sentence-transformers/all-mpnet-base-v2")
@@ -18,16 +19,20 @@ mcp = FastMCP("Kubeflow Docs MCP Server")
 
 model: SentenceTransformer = None
 client: MilvusClient = None
+_init_lock = threading.Lock()
 
 _FILTER_VALUE_RE = re.compile(r"^[A-Za-z0-9_/.\-]+$")
 
 
 def _init():
     global model, client
-    if model is None:
-        model = SentenceTransformer(EMBEDDING_MODEL)
-    if client is None:
-        client = MilvusClient(uri=MILVUS_URI, user=MILVUS_USER, password=MILVUS_PASSWORD)
+    if model is not None and client is not None:
+        return
+    with _init_lock:
+        if model is None:
+            model = SentenceTransformer(EMBEDDING_MODEL)
+        if client is None:
+            client = MilvusClient(uri=MILVUS_URI, user=MILVUS_USER, password=MILVUS_PASSWORD)
 
 
 def _search_collection(
@@ -35,6 +40,12 @@ def _search_collection(
 ) -> list[dict]:
     """Shared helper: encode query and search a Milvus collection."""
     _init()
+    # Search requires the collection to be loaded; pipelines may release load after ingest.
+    try:
+        client.load_collection(collection_name)
+    except Exception as e:
+        # Missing collection or load failure — surface on search
+        raise RuntimeError(f"Milvus load_collection failed for {collection_name}: {e}") from e
     embedding = model.encode(query).tolist()
     search_params = {
         "collection_name": collection_name,
