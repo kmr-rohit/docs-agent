@@ -1,0 +1,433 @@
+# Instincts generated from https://github.com/kmr-rohit/docs-agent
+# Generated: 2026-05-18T08:02:14.784Z
+# Version: 2.0
+# NOTE: This file supplements (does not replace) any existing curated instincts.
+# High-confidence manually curated instincts should be preserved alongside these.
+
+---
+id: docs-agent-commit-conventional
+trigger: "when writing a commit message"
+confidence: 0.85
+domain: git
+source: repo-analysis
+source_repo: https://github.com/kmr-rohit/docs-agent
+---
+
+# Docs Agent Commit Conventional
+
+## Action
+
+Use conventional commit format with prefixes: fix, docs, chore, perf
+
+## Evidence
+
+- 13 commits analyzed
+- Detected conventional commit pattern
+- Examples: fix: issues chunking effective_size, align Milvus DNS and MCP docs_rag default, docs: kube.md Kubeflow UI discovery and remove stray kubectl paste
+
+---
+id: docs-agent-commit-length
+trigger: "when writing a commit message"
+confidence: 0.6
+domain: git
+source: repo-analysis
+source_repo: https://github.com/kmr-rohit/docs-agent
+---
+
+# Docs Agent Commit Length
+
+## Action
+
+Write moderate-length commit messages (~67 characters)
+
+## Evidence
+
+- Average commit message length: 67 chars
+- Based on 13 commits
+
+---
+id: docs-agent-naming-files
+trigger: "when creating a new file"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/kmr-rohit/docs-agent
+---
+
+# Docs Agent Naming Files
+
+## Action
+
+Use kebab-case naming convention
+
+## Evidence
+
+- Analyzed file naming patterns in repository
+- Dominant pattern: kebab-case
+
+---
+id: docs-agent-import-relative
+trigger: "when importing modules"
+confidence: 0.75
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/kmr-rohit/docs-agent
+---
+
+# Docs Agent Import Relative
+
+## Action
+
+Use relative imports for project files
+
+## Evidence
+
+- Import analysis shows relative import pattern
+- Example: import { x } from '../lib/x'
+
+---
+id: docs-agent-export-style
+trigger: "when exporting from a module"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/kmr-rohit/docs-agent
+---
+
+# Docs Agent Export Style
+
+## Action
+
+Prefer named exports
+
+## Evidence
+
+- Export pattern analysis
+- Dominant style: named
+
+---
+id: docs-agent-test-separate
+trigger: "when writing tests"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/kmr-rohit/docs-agent
+---
+
+# Docs Agent Test Separate
+
+## Action
+
+Place tests in the tests/ or __tests__/ directory, mirroring src structure
+
+## Evidence
+
+- Separate test directory pattern detected
+- Tests live in dedicated test folders
+
+---
+id: docs-agent-workflow-pipeline-code-change
+trigger: "when doing pipeline code change"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/kmr-rohit/docs-agent
+---
+
+# Docs Agent Workflow Pipeline Code Change
+
+## Action
+
+Follow the pipeline-code-change workflow:
+1. Identify the change needed across pipelines (e.g., dependency pinning, Docker image reference, Milvus logic).
+2. Edit pipelines/incremental-pipeline.py, pipelines/issues-pipeline.py, pipelines/kubeflow-pipeline.py, and sometimes pipelines/code-pipeline.py to apply the change.
+3. Update documentation if necessary.
+4. Commit all affected pipeline files together with a descriptive message.
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: pipelines/incremental-pipeline.py, pipelines/issues-pipeline.py, pipelines/kubeflow-pipeline.py
+
+---
+id: docs-agent-workflow-documentation-troubleshooting-update
+trigger: "when doing documentation troubleshooting update"
+confidence: 0.65
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/kmr-rohit/docs-agent
+---
+
+# Docs Agent Workflow Documentation Troubleshooting Update
+
+## Action
+
+Follow the documentation-troubleshooting-update workflow:
+1. Discover or resolve a new operational issue or workaround.
+2. Edit kube.md to add a new section or update existing content.
+3. Commit only kube.md with a docs: prefix in the message.
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~3x per month
+- Files: kube.md
+
+---
+id: docs-agent-workflow-pipeline-codegen-recompile
+trigger: "when doing pipeline codegen recompile"
+confidence: 0.55
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/kmr-rohit/docs-agent
+---
+
+# Docs Agent Workflow Pipeline Codegen Recompile
+
+## Action
+
+Follow the pipeline-codegen-recompile workflow:
+1. Update Python pipeline definition (e.g., kubeflow-pipeline.py).
+2. Regenerate the YAML file (e.g., github_rag_pipeline.yaml) from the updated Python script.
+3. Commit the regenerated YAML file with a chore: prefix.
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~1x per month
+- Files: pipelines/github_rag_pipeline.yaml, pipelines/kubeflow-pipeline.py
+
+---
+id: docs-agent-instinct-file-naming
+trigger: "When creating or renaming a file in the repository"
+confidence: 0.85
+domain: code-style
+source: repo-analysis
+source_repo: kmr-rohit/docs-agent
+---
+
+# Docs Agent Instinct File Naming
+
+## Action
+
+Use kebab-case for file names
+
+## Evidence
+
+- Pattern in namingConventions.files
+- Observed in pipelines/incremental-pipeline.py, pipelines/issues-pipeline.py
+
+---
+id: docs-agent-instinct-function-naming
+trigger: "When defining a new function"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: kmr-rohit/docs-agent
+---
+
+# Docs Agent Instinct Function Naming
+
+## Action
+
+Use camelCase for function names
+
+## Evidence
+
+- Pattern in namingConventions.functions
+
+---
+id: docs-agent-instinct-class-naming
+trigger: "When defining a new class"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: kmr-rohit/docs-agent
+---
+
+# Docs Agent Instinct Class Naming
+
+## Action
+
+Use PascalCase for class names
+
+## Evidence
+
+- Pattern in namingConventions.classes
+
+---
+id: docs-agent-instinct-constant-naming
+trigger: "When defining a constant"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: kmr-rohit/docs-agent
+---
+
+# Docs Agent Instinct Constant Naming
+
+## Action
+
+Use SCREAMING_SNAKE_CASE for constant names
+
+## Evidence
+
+- Pattern in namingConventions.constants
+
+---
+id: docs-agent-instinct-import-style
+trigger: "When importing modules in Python files"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: kmr-rohit/docs-agent
+---
+
+# Docs Agent Instinct Import Style
+
+## Action
+
+Use relative imports
+
+## Evidence
+
+- Pattern in importStyle
+
+---
+id: docs-agent-instinct-export-style
+trigger: "When exporting functions or classes"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: kmr-rohit/docs-agent
+---
+
+# Docs Agent Instinct Export Style
+
+## Action
+
+Use named exports
+
+## Evidence
+
+- Pattern in exportStyle
+
+---
+id: docs-agent-instinct-test-location
+trigger: "When adding or updating tests"
+confidence: 0.7
+domain: testing
+source: repo-analysis
+source_repo: kmr-rohit/docs-agent
+---
+
+# Docs Agent Instinct Test Location
+
+## Action
+
+Place tests in a separate directory from source code
+
+## Evidence
+
+- architecture.folderStructure.testLocation is 'separate'
+
+---
+id: docs-agent-instinct-git-commit-prefix
+trigger: "When writing a commit message"
+confidence: 0.9
+domain: git
+source: repo-analysis
+source_repo: kmr-rohit/docs-agent
+---
+
+# Docs Agent Instinct Git Commit Prefix
+
+## Action
+
+Start the commit message with a conventional prefix (fix, docs, chore, perf)
+
+## Evidence
+
+- Seen in commit: fix: issues chunking effective_size, align Milvus DNS and MCP docs_rag default
+- Pattern in commits.prefixes
+
+---
+id: docs-agent-instinct-git-commit-length
+trigger: "When writing a commit message"
+confidence: 0.7
+domain: git
+source: repo-analysis
+source_repo: kmr-rohit/docs-agent
+---
+
+# Docs Agent Instinct Git Commit Length
+
+## Action
+
+Keep the commit message concise, around 67 characters on average
+
+## Evidence
+
+- commits.averageLength is 67
+
+---
+id: docs-agent-instinct-pipeline-code-change
+trigger: "When a change or fix needs to be applied to all or most pipeline scripts for consistency, bugfix, or dependency management"
+confidence: 0.95
+domain: workflow
+source: repo-analysis
+source_repo: kmr-rohit/docs-agent
+---
+
+# Docs Agent Instinct Pipeline Code Change
+
+## Action
+
+Edit all relevant pipeline scripts and commit them together with a descriptive message
+
+## Evidence
+
+- Workflow: pipeline-code-change
+- Example commits affecting multiple pipeline files
+
+---
+id: docs-agent-instinct-documentation-troubleshooting-update
+trigger: "When new troubleshooting information, workarounds, or operational tips become available for Kubeflow, Milvus, or related infrastructure"
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: kmr-rohit/docs-agent
+---
+
+# Docs Agent Instinct Documentation Troubleshooting Update
+
+## Action
+
+Edit kube.md to add or update troubleshooting content and commit with a docs: prefix
+
+## Evidence
+
+- Workflow: documentation-troubleshooting-update
+- Example: docs: kube.md troubleshoot Kubeflow admission webhook vs PSA restricted
+
+---
+id: docs-agent-instinct-pipeline-codegen-recompile
+trigger: "When the Python pipeline definition (e.g., kubeflow-pipeline.py) is updated and the corresponding YAML needs to be recompiled"
+confidence: 0.85
+domain: workflow
+source: repo-analysis
+source_repo: kmr-rohit/docs-agent
+---
+
+# Docs Agent Instinct Pipeline Codegen Recompile
+
+## Action
+
+Regenerate the YAML file from the updated Python script and commit with a chore: prefix
+
+## Evidence
+
+- Workflow: pipeline-codegen-recompile
+- Example: chore(pipelines): recompile github_rag_pipeline.yaml from kubeflow-pipeline.py
+
