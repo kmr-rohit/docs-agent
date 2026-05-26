@@ -1,4 +1,8 @@
-# GitHub Actions secrets for OKE CD (Settings → Secrets and variables → Actions)
+# GitHub Actions secrets for OKE CD
+
+> Full runbook (architecture, security, CI/CD steps, checklists): **[OKE-OPERATIONS.md](./OKE-OPERATIONS.md)**
+
+Configure at **Settings → Secrets and variables → Actions**.
 
 | Secret | Value | Required for |
 |--------|-------|--------------|

@@ -1,5 +1,7 @@
 # Qwen on OKE via KServe — bring-up notes
 
+> Security (is KServe public?), CI/CD, and full checklist: **[OKE-OPERATIONS.md](./OKE-OPERATIONS.md)**
+
 ## Prerequisites
 
 - OKE GPU node pool (`VM.GPU.A10.1`, `nvidia.com/gpu` taint)
