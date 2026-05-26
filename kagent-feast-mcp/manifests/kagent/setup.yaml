@@ -1,51 +1,52 @@
-# 1. Groq API Key Secret
+# Kagent + MCP setup for docs-agent namespace.
+# LLM: in-cluster KServe Qwen (OpenAI-compatible). MCP: GHCR image from CD pipeline.
+
+---
+# Dummy API key for local KServe (no auth required on in-cluster predictor)
 apiVersion: v1
 kind: Secret
 metadata:
-  name: kagent-groq
-  namespace: <YOUR_NAMESPACE>
+  name: kagent-kserve
+  namespace: docs-agent
 type: Opaque
 stringData:
-  GROQ_API_KEY: "<YOUR_GROQ_API_KEY>"
+  OPENAI_API_KEY: "local-kserve"
 
 ---
-# 2. LLM Provider Config (Groq is OpenAI-compatible)
 apiVersion: kagent.dev/v1alpha2
 kind: ModelConfig
 metadata:
-  name: groq-llama  
-  namespace: <YOUR_NAMESPACE>
+  name: kserve-qwen
+  namespace: docs-agent
 spec:
-  apiKeySecret: kagent-groq
-  apiKeySecretKey: GROQ_API_KEY
-  model: <model of your choice>
   provider: OpenAI
+  apiKeySecret: kagent-kserve
+  apiKeySecretKey: OPENAI_API_KEY
+  model: qwen2.5-3b-instruct
   openAI:
-    baseUrl: "https://api.groq.com/openai/v1"
+    baseUrl: "http://qwen-predictor.docs-agent.svc.cluster.local/openai/v1"
 
 ---
-# 3. MCP Server Reference
 apiVersion: kagent.dev/v1alpha2
 kind: RemoteMCPServer
 metadata:
   name: kubeflow-docs-mcp
-  namespace: <YOUR_NAMESPACE>
+  namespace: docs-agent
 spec:
-  description: "MCP server for searching Kubeflow documentation via Feast and Milvus"
-  url: http://mcp-kubeflow-docs.<YOUR_NAMESPACE>.svc.cluster.local:8000/mcp
+  description: "MCP server for searching Kubeflow documentation via Milvus"
+  url: http://mcp-kubeflow-docs.docs-agent.svc.cluster.local:8000/mcp
 
 ---
-# 4. Agent with MCP tool
 apiVersion: kagent.dev/v1alpha2
 kind: Agent
 metadata:
   name: kubeflow-docs-agent
-  namespace: <YOUR_NAMESPACE>
+  namespace: docs-agent
 spec:
   description: "Kubeflow documentation assistant"
   type: Declarative
   declarative:
-    modelConfig: groq-llama
+    modelConfig: kserve-qwen
     tools:
       - type: McpServer
         mcpServer:

@@ -1,8 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mcp-server-config
+  namespace: docs-agent
+data:
+  COLLECTION_NAME: kubeflow_docs_docs_rag
+  EMBEDDING_MODEL: sentence-transformers/all-mpnet-base-v2
+  MILVUS_URI: http://my-release-milvus.docs-agent.svc.cluster.local:19530
+  MILVUS_USER: root
+  PORT: "8000"
+  PYTHONUNBUFFERED: "1"
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: mcp-kubeflow-docs
-  namespace: <YOUR_NAMESPACE>
+  namespace: docs-agent
+  labels:
+    app: mcp-kubeflow-docs
 spec:
   replicas: 1
   selector:
@@ -13,16 +28,26 @@ spec:
       labels:
         app: mcp-kubeflow-docs
     spec:
+      imagePullSecrets:
+        - name: ghcrsecret
       containers:
         - name: mcp-server
-          image: <YOUR_DOCKERHUB_USERNAME>/mcp-kubeflow-docs:latest
+          image: ghcr.io/OWNER/mcp-kubeflow-docs:latest
           ports:
-            - containerPort: 8000
+            - name: mcp
+              containerPort: 8000
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: mcp-server-config
           env:
-            - name: PORT
-              value: "8000"
-            - name: PYTHONUNBUFFERED
-              value: "1"
+            - name: MILVUS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mcp-server-secret
+                  key: MILVUS_PASSWORD
+            - name: CODE_COLLECTION_NAME
+              value: code_rag
           readinessProbe:
             tcpSocket:
               port: 8000
@@ -45,11 +70,13 @@ apiVersion: v1
 kind: Service
 metadata:
   name: mcp-kubeflow-docs
-  namespace: <YOUR_NAMESPACE>
+  namespace: docs-agent
 spec:
   selector:
     app: mcp-kubeflow-docs
   ports:
-    - port: 8000
+    - name: mcp
+      port: 8000
       targetPort: 8000
+      protocol: TCP
   type: ClusterIP

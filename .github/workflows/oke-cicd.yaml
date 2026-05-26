@@ -4,20 +4,17 @@ on:
   push:
     branches:
       - main
+      - plan/cd-and-qwen-kserve
   pull_request:
+  workflow_dispatch:
 
 env:
-  # Registry config - Secrets (YAML is a pure template)
-  REGISTRY: ${{ secrets.OCI_REGISTRY }} # e.g., iad.ocir.io
-  REPOSITORY: ${{ secrets.OCI_REPOSITORY }} # e.g., tenancy-namespace/project-name
-  IMAGE_NAME: docs-agent
-  
-  # OKE Cluster ID - Secrets
+  REGISTRY: ghcr.io
+  IMAGE_NAME: mcp-kubeflow-docs
+  K8S_NAMESPACE: docs-agent
   OKE_CLUSTER_OCID: ${{ secrets.OKE_CLUSTER_OCID }}
 
-
 jobs:
-  # 1. CI Phase: Run Python compilation check and unit tests (on all PRs and pushes to main)
   test-and-compile:
     name: Compile and Test
     runs-on: ubuntu-latest
@@ -28,64 +25,58 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: "3.10"
 
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          if [ -f kagent-feast-mcp/mcp-server/requirements.txt ]; then pip install -r kagent-feast-mcp/mcp-server/requirements.txt; fi
+          pip install -r kagent-feast-mcp/mcp-server/requirements.txt
           if [ -f requirements-test.txt ]; then pip install -r requirements-test.txt; fi
           pip install pytest
 
-      - name: Compile python files in MCP Server
-        run: |
-          echo "Compiling active MCP Server python files..."
-          python -m py_compile kagent-feast-mcp/mcp-server/*.py
+      - name: Compile MCP server
+        run: python -m py_compile kagent-feast-mcp/mcp-server/*.py
 
       - name: Run Unit Tests
         run: |
           if [ -d tests ]; then
-            echo "Running pytest suite..."
             pytest
           else
-            echo "No test suite directory found; skipping."
+            echo "No tests directory; skipping."
           fi
 
-  # 2. CD Phase: Build Docker image and Deploy (ONLY runs on pushes to main branch)
   build-and-deploy:
     name: Build, Push, and Deploy to OKE
     needs: test-and-compile
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # Set a dynamic tag (e.g., using GitHub commit SHA)
       - name: Set Image Tag
-        id: vars
-        run: echo "tag=${GITHUB_SHA::7}" >> $GITHUB_ENV
+        run: echo "tag=${GITHUB_SHA::7}" >> "$GITHUB_ENV"
 
-      # Login to OCI Container Registry (OCIR)
-      - name: Login to OCIR
+      - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.OCIR_USERNAME }} # Format: <tenancy-namespace>/<oci-username>
-          password: ${{ secrets.OCIR_AUTH_TOKEN }} # An OCI Auth Token generated for the user
+          username: ${{ secrets.GHCR_USERNAME }}
+          password: ${{ secrets.GHCR_TOKEN }}
 
-      # Build and push the Docker image
-      - name: Build and Push Docker Image
+      - name: Build and Push MCP Image
         uses: docker/build-push-action@v5
         with:
           context: ./kagent-feast-mcp/mcp-server
           file: ./kagent-feast-mcp/mcp-server/Dockerfile
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:${{ env.tag }}
-            ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ secrets.GHCR_USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.tag }}
+            ${{ env.REGISTRY }}/${{ secrets.GHCR_USERNAME }}/${{ env.IMAGE_NAME }}:latest
 
-      # Setup OCI CLI for deployment
       - name: Install OCI CLI
         uses: oracle-actions/setup-oci-cli@v1.2.0
         with:
@@ -95,7 +86,6 @@ jobs:
           oci-key-file: ${{ secrets.OCI_KEY_FILE }}
           oci-fingerprint: ${{ secrets.OCI_FINGERPRINT }}
 
-      # Generate kubeconfig to access OKE
       - name: Generate Kubeconfig for OKE
         run: |
           mkdir -p ~/.kube
@@ -106,19 +96,48 @@ jobs:
             --token-version 2.0.0
           chmod 600 ~/.kube/config
 
-      # Deploy to Kubernetes
       - name: Deploy to OKE
+        env:
+          FULL_IMAGE: ${{ env.REGISTRY }}/${{ secrets.GHCR_USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.tag }}
         run: |
-          # Dynamically create/update the image pull secret in OKE
-          kubectl create secret docker-registry ocirsecret \
-            --docker-server=${{ env.REGISTRY }} \
-            --docker-username='${{ secrets.OCIR_USERNAME }}' \
-            --docker-password='${{ secrets.OCIR_AUTH_TOKEN }}' \
-            --docker-email='github-actions@example.com' \
+          set -euo pipefail
+
+          kubectl create namespace "${{ env.K8S_NAMESPACE }}" --dry-run=client -o yaml | kubectl apply -f -
+
+          kubectl create secret docker-registry ghcrsecret \
+            --namespace "${{ env.K8S_NAMESPACE }}" \
+            --docker-server="${{ env.REGISTRY }}" \
+            --docker-username="${{ secrets.GHCR_USERNAME }}" \
+            --docker-password="${{ secrets.GHCR_TOKEN }}" \
+            --docker-email="${{ secrets.GHCR_USERNAME }}@users.noreply.github.com" \
             --dry-run=client -o yaml | kubectl apply -f -
 
-          # Apply manifest files if they exist in the repository
-          if [ -f kagent-feast-mcp/manifests/serving-runtime.yaml ]; then kubectl apply -f kagent-feast-mcp/manifests/serving-runtime.yaml; fi
-          if [ -f kagent-feast-mcp/manifests/inference-service.yaml ]; then kubectl apply -f kagent-feast-mcp/manifests/inference-service.yaml; fi
-          if [ -f gpu-pod.yaml ]; then kubectl apply -f gpu-pod.yaml; fi
-          if [ -f vllm-qwen.yaml ]; then kubectl apply -f vllm-qwen.yaml; fi
+          kubectl apply -f kagent-feast-mcp/manifests/mcp-server/mcp-server.yaml
+          kubectl set image deployment/mcp-kubeflow-docs \
+            mcp-server="${FULL_IMAGE}" \
+            -n "${{ env.K8S_NAMESPACE }}" || true
+          kubectl patch deployment/mcp-kubeflow-docs -n "${{ env.K8S_NAMESPACE }}" --type=merge \
+            -p '{"spec":{"template":{"spec":{"imagePullSecrets":[{"name":"ghcrsecret"}]}}}}'
+          kubectl rollout status deployment/mcp-kubeflow-docs \
+            -n "${{ env.K8S_NAMESPACE }}" --timeout=600s
+
+          kubectl apply -f kagent-feast-mcp/manifests/kagent/setup.yaml
+          kubectl apply -f manifests/serving-runtime.yaml
+          kubectl apply -f manifests/inference-service.yaml
+          kubectl annotate inferenceservice qwen -n "${{ env.K8S_NAMESPACE }}" serving.kserve.io/stop- --overwrite 2>/dev/null || true
+
+      - name: Smoke test MCP + KServe
+        run: |
+          set -euo pipefail
+          kubectl wait --for=condition=Ready inferenceservice/qwen \
+            -n "${{ env.K8S_NAMESPACE }}" --timeout=1800s || echo "KServe not ready yet; check cluster manually."
+
+          POD="$(kubectl get pods -n "${{ env.K8S_NAMESPACE }}" -l serving.kserve.io/inferenceservice=qwen -o jsonpath='{.items[0].metadata.name}')"
+          kubectl exec -n "${{ env.K8S_NAMESPACE }}" "${POD}" -c kserve-container -- python3 -c "
+          import urllib.request, json
+          p=json.dumps({'model':'qwen2.5-3b-instruct','messages':[{'role':'user','content':'ping'}],'max_tokens':8}).encode()
+          r=urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:8080/openai/v1/chat/completions',data=p,headers={'Content-Type':'application/json'}), timeout=60)
+          print('kserve ok', r.status)
+          "
+
+          kubectl get agent,modelconfig -n "${{ env.K8S_NAMESPACE }}"
