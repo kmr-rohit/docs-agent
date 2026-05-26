@@ -24,7 +24,7 @@ spec:
   apiKeySecretKey: OPENAI_API_KEY
   model: qwen2.5-3b-instruct
   openAI:
-    baseUrl: "http://qwen-predictor.docs-agent.svc.cluster.local/openai/v1"
+    baseUrl: "http://qwen-llm.docs-agent.svc.cluster.local/openai/v1"
 
 ---
 apiVersion: kagent.dev/v1alpha2

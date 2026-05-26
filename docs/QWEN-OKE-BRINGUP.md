@@ -50,7 +50,8 @@ kubectl create secret generic huggingface-secret -n docs-agent \
 
 | Use | URL |
 |-----|-----|
-| OpenAI chat (in-cluster) | `http://qwen-predictor.docs-agent.svc.cluster.local/openai/v1` |
+| OpenAI chat (in-cluster, Kagent) | `http://qwen-llm.docs-agent.svc.cluster.local/openai/v1` |
+| Knative gateway (do not use in-cluster) | `qwen-predictor` → connection refused from pods |
 | Kagent ModelConfig baseUrl | same as above |
 
 Model name: `qwen2.5-3b-instruct`
@@ -61,7 +62,7 @@ Model name: `qwen2.5-3b-instruct`
 kubectl exec -n docs-agent deploy/kagent-tools -- python3 -c "
 import urllib.request, json
 p=json.dumps({'model':'qwen2.5-3b-instruct','messages':[{'role':'user','content':'Hello'}],'max_tokens':32}).encode()
-r=urllib.request.urlopen(urllib.request.Request('http://qwen-predictor.docs-agent.svc.cluster.local/openai/v1/chat/completions',data=p,headers={'Content-Type':'application/json'}))
+r=urllib.request.urlopen(urllib.request.Request('http://qwen-llm.docs-agent.svc.cluster.local/openai/v1/chat/completions',data=p,headers={'Content-Type':'application/json'}))
 print(r.read().decode())
 "
 ```

@@ -121,6 +121,7 @@ jobs:
           kubectl rollout status deployment/mcp-kubeflow-docs \
             -n "${{ env.K8S_NAMESPACE }}" --timeout=600s
 
+          kubectl apply -f manifests/qwen-llm-service.yaml
           kubectl apply -f kagent-feast-mcp/manifests/kagent/setup.yaml
           kubectl apply -f manifests/serving-runtime.yaml
           kubectl apply -f manifests/inference-service.yaml
