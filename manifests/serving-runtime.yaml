@@ -10,7 +10,7 @@ spec:
       autoSelect: true
   containers:
     - name: kserve-container
-      image: kserve/huggingfaceserver:latest-gpu
+      image: index.docker.io/kserve/huggingfaceserver:v0.17.0-gpu
       command: ["python", "-m", "huggingfaceserver"]
       resources:
         requests:

@@ -1,68 +1,81 @@
-# Qwen on OKE — bring-up notes (validated 2026-05-26)
+# Qwen on OKE via KServe — bring-up notes
 
-## Registry choice (GHCR vs OCIR)
+## Prerequisites
 
-**You do NOT need OCIR for CD.** GitHub Actions can build/push to **GHCR** using:
+- OKE GPU node pool (`VM.GPU.A10.1`, `nvidia.com/gpu` taint)
+- KServe + Knative installed
+- **Expand GPU node root disk** after each new GPU node (250GB boot volume ships with ~36GB root FS until expanded)
 
-| Secret | Purpose |
-|--------|---------|
-| `GHCR_USERNAME` | GitHub username or `[org]` |
-| `GHCR_TOKEN` | PAT with `write:packages` |
-
-Image example: `ghcr.io/<org>/mcp-kubeflow-docs:<sha>`
-
-Cluster pull: create `imagePullSecret` in `docs-agent` if the package is private.
-
-OCIR is optional if you prefer Oracle-native registry later.
-
-## LLM serving (current validated path)
-
-`kserve/huggingfaceserver:latest-gpu` is **too large** for default OKE GPU node root (~36GB before LVM expand) and exhausts disk/inodes.
-
-**Working setup:** direct vLLM deployment:
+## Quick deploy
 
 ```bash
-# 1. Expand GPU node disk (required once per new GPU node)
-kubectl apply -f manifests/gpu-node-lvm-expand-job.yaml
-kubectl wait --for=condition=complete job/gpu-node-lvm-expand -n kube-system --timeout=120s
-
-# 2. Deploy Qwen vLLM
-kubectl apply -f manifests/qwen-vllm-deployment.yaml
-
-# 3. Validate
-kubectl exec -n docs-agent deploy/qwen-vllm -- python3 -c "
-import urllib.request, json
-p=json.dumps({'model':'qwen2.5-3b-instruct','messages':[{'role':'user','content':'Hello'}],'max_tokens':32}).encode()
-r=urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:8000/v1/chat/completions',data=p,headers={'Content-Type':'application/json'}))
-print(r.read().decode())
-"
+./scripts/deploy-qwen-kserve.sh
 ```
 
-OpenAI-compatible endpoint (in-cluster):
+Or manually:
 
-`http://qwen-vllm.docs-agent.svc.cluster.local:8000/v1`
+```bash
+kubectl apply -f manifests/gpu-node-lvm-expand-job.yaml
+kubectl wait --for=condition=complete job/gpu-node-lvm-expand -n kube-system --timeout=180s
 
-## HF token
+kubectl apply -f manifests/serving-runtime.yaml
+kubectl apply -f manifests/inference-service.yaml
 
-Create secret when `hf_token` is available:
+kubectl wait --for=condition=Ready inferenceservice/qwen -n docs-agent --timeout=1800s
+```
+
+## Important image pin (CUDA)
+
+**Do not use `latest-gpu`** on current OKE nodes (driver CUDA 13.1).  
+`latest-gpu` requires CUDA **>= 13.2** and fails with:
+
+```
+nvidia-container-cli: unsatisfied condition: cuda>=13.2
+```
+
+Use pinned tag in `manifests/serving-runtime.yaml`:
+
+```yaml
+image: index.docker.io/kserve/huggingfaceserver:v0.17.0-gpu
+```
+
+## HF token (optional)
 
 ```bash
 kubectl create secret generic huggingface-secret -n docs-agent \
   --from-literal=token="$HF_TOKEN" --dry-run=client -o yaml | kubectl apply -f -
 ```
 
-Qwen2.5-3B-Instruct works without token; token helps HF rate limits.
+## Endpoints
 
-## Kagent cutover (next step)
+| Use | URL |
+|-----|-----|
+| OpenAI chat (in-cluster) | `http://qwen-predictor.docs-agent.svc.cluster.local/openai/v1` |
+| Kagent ModelConfig baseUrl | same as above |
 
-Point `ModelConfig` at vLLM service instead of Groq:
+Model name: `qwen2.5-3b-instruct`
 
-```yaml
-openAI:
-  baseUrl: "http://qwen-vllm.docs-agent.svc.cluster.local:8000/v1"
-model: qwen2.5-3b-instruct
+## Smoke test
+
+```bash
+kubectl exec -n docs-agent deploy/kagent-tools -- python3 -c "
+import urllib.request, json
+p=json.dumps({'model':'qwen2.5-3b-instruct','messages':[{'role':'user','content':'Hello'}],'max_tokens':32}).encode()
+r=urllib.request.urlopen(urllib.request.Request('http://qwen-predictor.docs-agent.svc.cluster.local/openai/v1/chat/completions',data=p,headers={'Content-Type':'application/json'}))
+print(r.read().decode())
+"
 ```
 
-## KServe InferenceService
+## Stop / start (cost saving)
 
-Left stopped (`serving.kserve.io/stop=true`). Revisit after GPU nodes have expanded disk and a slimmer runtime image is chosen.
+```bash
+# stop predictor pods
+kubectl annotate inferenceservice qwen -n docs-agent serving.kserve.io/stop=true --overwrite
+
+# start again
+kubectl annotate inferenceservice qwen -n docs-agent serving.kserve.io/stop-
+```
+
+## Registry for CD (MCP images)
+
+OCIR is **not required**. Use **GHCR** with `GHCR_USERNAME` + `GHCR_TOKEN` in GitHub Actions.

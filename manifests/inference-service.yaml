@@ -3,6 +3,8 @@ kind: InferenceService
 metadata:
   name: qwen
   namespace: docs-agent
+  annotations:
+    serving.knative.dev/progress-deadline: "1800s"
 spec:
   predictor:
     minReplicas: 1
