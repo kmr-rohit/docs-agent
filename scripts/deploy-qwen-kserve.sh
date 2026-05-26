@@ -35,6 +35,7 @@ fi
 echo "==> Applying KServe ServingRuntime + InferenceService"
 kubectl apply -f "${ROOT_DIR}/manifests/serving-runtime.yaml"
 kubectl apply -f "${ROOT_DIR}/manifests/inference-service.yaml"
+kubectl apply -f "${ROOT_DIR}/manifests/qwen-llm-service.yaml"
 
 echo "==> Starting InferenceService (remove stop annotation if present)"
 kubectl annotate inferenceservice qwen -n "${NAMESPACE}" serving.kserve.io/stop- --overwrite 2>/dev/null || true
@@ -43,10 +44,10 @@ echo "==> Waiting for InferenceService Ready (up to 30m — image + model downlo
 kubectl wait --for=condition=Ready inferenceservice/qwen -n "${NAMESPACE}" --timeout=1800s
 
 URL="$(kubectl get inferenceservice qwen -n "${NAMESPACE}" -o jsonpath='{.status.url}' 2>/dev/null || true)"
-PREDICTOR_HOST="qwen-predictor.${NAMESPACE}.svc.cluster.local"
+PREDICTOR_HOST="qwen-llm.${NAMESPACE}.svc.cluster.local"
 echo "==> InferenceService Ready"
 echo "    status URL: ${URL:-n/a}"
-echo "    in-cluster OpenAI base: http://${PREDICTOR_HOST}/openai/v1"
+echo "    in-cluster OpenAI base (Kagent): http://${PREDICTOR_HOST}/openai/v1"
 
 echo "==> Smoke test (chat completion via KServe OpenAI endpoint)"
 POD="$(kubectl get pods -n "${NAMESPACE}" -l serving.kserve.io/inferenceservice=qwen -o jsonpath='{.items[0].metadata.name}')"
