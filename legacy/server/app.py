@@ -2,7 +2,6 @@ import os
 import json
 import asyncio
 import httpx
-import websockets
 from websockets.server import serve
 from websockets.exceptions import ConnectionClosedError
 import logging
