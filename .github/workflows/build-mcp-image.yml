@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 env:
-  IMAGE: ghcr.io/kmr-rohit/mcp-kubeflow-docs
+  IMAGE: ghcr.io/${{ github.repository_owner }}/mcp-kubeflow-docs
 
 jobs:
   build-and-push:
@@ -47,7 +47,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          context: ./kagent-feast-mcp
+          context: ./kagent-feast-mcp/mcp-server
           file: ./kagent-feast-mcp/mcp-server/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
