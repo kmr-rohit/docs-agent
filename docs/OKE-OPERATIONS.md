@@ -472,12 +472,10 @@ After ingestion, re-run the Milvus collections check in §7.
 
 ## 10. Merge to `main` & follow-up PR workflow
 
-### Step 1 — Merge this branch (`plan/cd-and-qwen-kserve`)
-
 1. Ensure GitHub Actions secrets are set ([GHCR-CD-SETUP.md](./GHCR-CD-SETUP.md))
-2. Open PR: `plan/cd-and-qwen-kserve` → `main`
-3. CI runs on PR (**compile/test only**, no deploy)
-4. Merge to `main` → CD runs automatically (build MCP → GHCR → deploy OKE)
+2. Open PR: `integrate/oke-and-pipelines` → `main`
+3. CI runs on PR: **PR Safety** (ruff + pytest) + **oke-cicd** compile/test (no deploy)
+4. Merge to `main` → CD deploys to OKE automatically
 
 ### Step 2 — Verify CD on `main` (first merge)
 
