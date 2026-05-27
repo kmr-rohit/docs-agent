@@ -509,9 +509,8 @@ Each follow-up PR gets CI on PR; only merges to `main` deploy to OKE.
 
 ### What CI does today (on every PR)
 
-- Python 3.10, install MCP requirements
-- `py_compile` on `kagent-feast-mcp/mcp-server/*.py`
-- `pytest` if `tests/` exists (currently skipped)
+- **PR Safety** (`tests.yml`): ruff lint/format, compileall, **92 pytest**
+- **oke-cicd** (PR): ruff + pytest in `test-and-compile` (no deploy)
 
 ### What CD does today (push to `main` or `workflow_dispatch`)
 
