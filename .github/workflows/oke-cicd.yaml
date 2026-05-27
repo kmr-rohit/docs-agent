@@ -31,7 +31,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r kagent-feast-mcp/mcp-server/requirements.txt
           pip install -r requirements-test.txt
-          pip install ruff
+          pip install ruff kfp kfp-kubernetes
+
+      - name: Compile docs RAG pipeline
+        working-directory: pipelines
+        run: python kubeflow-pipeline.py
 
       - name: Ruff lint
         run: ruff check kagent-feast-mcp/mcp-server tests pipelines
@@ -100,6 +104,15 @@ jobs:
           set -euo pipefail
 
           kubectl create namespace "${{ env.K8S_NAMESPACE }}" --dry-run=client -o yaml | kubectl apply -f -
+
+          if [ -n "${{ secrets.Github_Pat }}" ]; then
+            kubectl create secret generic github-pat \
+              --namespace "${{ env.K8S_NAMESPACE }}" \
+              --from-literal=Github_Pat="${{ secrets.Github_Pat }}" \
+              --dry-run=client -o yaml | kubectl apply -f -
+          else
+            echo "Github_Pat secret not set; skipping github-pat K8s secret (pipeline rate limits may apply)"
+          fi
 
           kubectl create secret docker-registry ghcrsecret \
             --namespace "${{ env.K8S_NAMESPACE }}" \

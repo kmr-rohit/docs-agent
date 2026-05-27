@@ -17,7 +17,20 @@ def download_specific_files(
     import requests
     import json
     import base64
+    import os
     from bs4 import BeautifulSoup
+
+    def resolve_github_token(token):
+        for candidate in (token, os.environ.get("Github_Pat"), os.environ.get("GITHUB_TOKEN")):
+            if candidate and str(candidate).strip():
+                return str(candidate).strip()
+        return ""
+
+    github_token = resolve_github_token(github_token)
+    if github_token:
+        print("Using authenticated GitHub API requests")
+    else:
+        print("WARNING: No github_token or Github_Pat env set; rate limits will be low (60 req/hr)")
 
     headers = {"Authorization": f"token {github_token}"} if github_token else {}
     
