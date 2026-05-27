@@ -6,10 +6,10 @@ from fastmcp import FastMCP
 from pymilvus import MilvusClient
 from sentence_transformers import SentenceTransformer
 
-MILVUS_URI = os.getenv("MILVUS_URI", "http://localhost:19530")
+MILVUS_URI = os.getenv("MILVUS_URI", "http://my-release-milvus.docs-agent.svc.cluster.local:19530")
 MILVUS_USER = os.getenv("MILVUS_USER", "root")
 MILVUS_PASSWORD = os.getenv("MILVUS_PASSWORD", "Milvus")
-COLLECTION_NAME = os.getenv("COLLECTION_NAME", "docs_rag")
+COLLECTION_NAME = os.getenv("COLLECTION_NAME", "kubeflow_docs_docs_rag")
 ISSUES_COLLECTION_NAME = os.getenv("ISSUES_COLLECTION_NAME", "issues_rag")
 CODE_COLLECTION_NAME = os.getenv("CODE_COLLECTION_NAME", "code_rag")
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "sentence-transformers/all-mpnet-base-v2")
@@ -44,7 +44,6 @@ def _search_collection(
     try:
         client.load_collection(collection_name)
     except Exception as e:
-        # Missing collection or load failure — surface on search
         raise RuntimeError(f"Milvus load_collection failed for {collection_name}: {e}") from e
     embedding = model.encode(query).tolist()
     search_params = {
@@ -143,12 +142,12 @@ def search_github_issues(query: str, top_k: int = 5, repo: str = "", state: str 
         entry += f"\n**Repo:** {entity.get('repo_name', '')}"
 
         issue_num = entity.get("issue_number", "")
-        state = entity.get("issue_state", "")
+        issue_state = entity.get("issue_state", "")
         labels = entity.get("issue_labels", "")
         if issue_num:
             entry += f"\n**Issue:** #{issue_num}"
-        if state:
-            entry += f" ({state})"
+        if issue_state:
+            entry += f" ({issue_state})"
         if labels:
             entry += f"\n**Labels:** {labels}"
 

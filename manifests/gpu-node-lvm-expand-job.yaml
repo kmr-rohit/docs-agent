@@ -1,0 +1,46 @@
+# One-shot Job: expand OKE GPU node root LVM to full boot volume (250GB).
+# Run after a new GPU node joins the cluster, BEFORE pulling large ML images.
+#
+#   kubectl apply -f manifests/gpu-node-lvm-expand-job.yaml
+#   kubectl logs -n kube-system job/gpu-node-lvm-expand -f
+#
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: gpu-node-lvm-expand
+  namespace: kube-system
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      priorityClassName: system-node-critical
+      restartPolicy: Never
+      nodeSelector:
+        nvidia.com/gpu.present: "true"
+      tolerations:
+        - operator: Exists
+      containers:
+        - name: expand
+          image: index.docker.io/library/alpine:3.20
+          command:
+            - /bin/sh
+            - -c
+            - |
+              chroot /host bash -c '
+                set -eux
+                df -h /
+                growpart /dev/sda 3 || true
+                pvresize /dev/sda3
+                lvextend -r -l +100%FREE /dev/mapper/ocivolume-root || lvextend -l +100%FREE /dev/mapper/ocivolume-root
+                xfs_growfs /
+                df -h /
+              '
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: host
+              mountPath: /host
+      volumes:
+        - name: host
+          hostPath:
+            path: /

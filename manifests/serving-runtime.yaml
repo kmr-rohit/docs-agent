@@ -10,14 +10,14 @@ spec:
       autoSelect: true
   containers:
     - name: kserve-container
-      image: kserve/huggingfaceserver:latest-gpu
+      image: index.docker.io/kserve/huggingfaceserver:v0.17.0-gpu
       command: ["python", "-m", "huggingfaceserver"]
       resources:
         requests:
-          cpu: "4"
-          memory: "16Gi"
+          cpu: "2"
+          memory: "12Gi"
           nvidia.com/gpu: "1"
         limits:
-          cpu: "6"
-          memory: "24Gi"
+          cpu: "4"
+          memory: "16Gi"
           nvidia.com/gpu: "1"

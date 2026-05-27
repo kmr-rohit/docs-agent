@@ -5,7 +5,7 @@
 #    base_url: str [Default: 'https://www.kubeflow.org/docs']
 #    chunk_overlap: int [Default: 100.0]
 #    chunk_size: int [Default: 1000.0]
-#    collection_name: str [Default: 'docs_rag']
+#    collection_name: str [Default: 'kubeflow_docs_docs_rag']
 #    directory_path: str [Default: 'content/en']
 #    github_token: str [Default: '']
 #    milvus_host: str [Default: 'my-release-milvus.docs-agent.svc.cluster.local']
@@ -85,7 +85,7 @@ deploymentSpec:
           \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
           \ python3 -m pip install --quiet --no-warn-script-location 'sentence-transformers==3.3.1'\
           \ 'transformers==4.44.2' 'langchain-text-splitters'  &&  python3 -m pip\
-          \ install --quiet --no-warn-script-location 'kfp==2.16.0' '--no-deps' 'typing-extensions>=3.7.4,<5;\
+          \ install --quiet --no-warn-script-location 'kfp==2.16.1' '--no-deps' 'typing-extensions>=3.7.4,<5;\
           \ python_version<\"3.9\"' && \"$0\" \"$@\"\n"
         - sh
         - -ec
@@ -105,16 +105,16 @@ deploymentSpec:
           \ import SentenceTransformer\n    from langchain_text_splitters import RecursiveCharacterTextSplitter\n\
           \n    device = 'cuda' if torch.cuda.is_available() else 'cpu'\n    model\
           \ = SentenceTransformer('sentence-transformers/all-mpnet-base-v2', device=device)\n\
-          \    print(f\"Model loaded on {device}\")\n\n    records = []\n\n    with\
-          \ open(github_data.path, 'r', encoding='utf-8') as f:\n        for line\
-          \ in f:\n            file_data = json.loads(line)\n            content =\
-          \ file_data['content']\n\n            # AGGRESSIVE CLEANING FOR BETTER EMBEDDINGS\n\
-          \n            # Remove Hugo frontmatter (both --- and +++ styles)\n    \
-          \        content = re.sub(r'^\\s*[+\\-]{3,}.*?[+\\-]{3,}\\s*', '', content,\
-          \ flags=re.DOTALL | re.MULTILINE)\n\n            # Remove Hugo template\
-          \ syntax\n            content = re.sub(r'\\{\\{.*?\\}\\}', '', content,\
-          \ flags=re.DOTALL)\n\n            # Remove HTML comments and tags\n    \
-          \        content = re.sub(r'<!--.*?-->', '', content, flags=re.DOTALL)\n\
+          \    print(f\"Model loaded on {device}\")\n    EMBED_BATCH_SIZE = 32\n\n\
+          \    records = []\n\n    with open(github_data.path, 'r', encoding='utf-8')\
+          \ as f:\n        for line in f:\n            file_data = json.loads(line)\n\
+          \            content = file_data['content']\n\n            # AGGRESSIVE\
+          \ CLEANING FOR BETTER EMBEDDINGS\n\n            # Remove Hugo frontmatter\
+          \ (both --- and +++ styles)\n            content = re.sub(r'^\\s*[+\\-]{3,}.*?[+\\\
+          -]{3,}\\s*', '', content, flags=re.DOTALL | re.MULTILINE)\n\n          \
+          \  # Remove Hugo template syntax\n            content = re.sub(r'\\{\\{.*?\\\
+          }\\}', '', content, flags=re.DOTALL)\n\n            # Remove HTML comments\
+          \ and tags\n            content = re.sub(r'<!--.*?-->', '', content, flags=re.DOTALL)\n\
           \            content = re.sub(r'<[^>]+>', ' ', content)\n\n            #\
           \ Remove navigation/menu artifacts\n            content = re.sub(r'\\b(Get\
           \ Started|Contribute|GenAI|Home|Menu|Navigation)\\b', '', content, flags=re.IGNORECASE)\n\
@@ -142,17 +142,19 @@ deploymentSpec:
           \ into chunks\n            chunks = text_splitter.split_text(content)\n\n\
           \            print(f\"File: {file_data['path']} -> {len(chunks)} chunks\
           \ (avg: {sum(len(c) for c in chunks)/len(chunks):.0f} chars)\")\n\n    \
-          \        # Create embeddings\n            for chunk_idx, chunk in enumerate(chunks):\n\
-          \                embedding = model.encode(chunk).tolist()\n            \
-          \    records.append({\n                    'file_unique_id': file_unique_id,\n\
-          \                    'repo_name': repo_name,\n                    'file_path':\
-          \ file_data['path'],\n                    'file_name': file_data['file_name'],\n\
-          \                    'citation_url': citation_url[:1024],\n            \
-          \        'chunk_index': chunk_idx,\n                    'content_text':\
-          \ chunk[:2000],\n                    'embedding': embedding\n          \
-          \      })\n\n    print(f\"Created {len(records)} total chunks\")\n\n   \
-          \ with open(embedded_data.path, 'w', encoding='utf-8') as f:\n        for\
-          \ record in records:\n            f.write(json.dumps(record, ensure_ascii=False)\
+          \        # Create embeddings in batches to avoid per-chunk model overhead.\n\
+          \            embeddings = model.encode(\n                chunks,\n     \
+          \           batch_size=EMBED_BATCH_SIZE,\n                show_progress_bar=False,\n\
+          \            )\n            for chunk_idx, (chunk, embedding) in enumerate(zip(chunks,\
+          \ embeddings)):\n                records.append({\n                    'file_unique_id':\
+          \ file_unique_id,\n                    'repo_name': repo_name,\n       \
+          \             'file_path': file_data['path'],\n                    'file_name':\
+          \ file_data['file_name'],\n                    'citation_url': citation_url[:1024],\n\
+          \                    'chunk_index': chunk_idx,\n                    'content_text':\
+          \ chunk[:2000],\n                    'embedding': embedding.tolist()\n \
+          \               })\n\n    print(f\"Created {len(records)} total chunks\"\
+          )\n\n    with open(embedded_data.path, 'w', encoding='utf-8') as f:\n  \
+          \      for record in records:\n            f.write(json.dumps(record, ensure_ascii=False)\
           \ + '\\n')\n\n"
         image: docker.io/pytorch/pytorch:2.3.0-cuda12.1-cudnn8-runtime
     exec-download-github-directory:
@@ -168,7 +170,7 @@ deploymentSpec:
         - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
           \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
           \ python3 -m pip install --quiet --no-warn-script-location 'requests' 'beautifulsoup4'\
-          \  &&  python3 -m pip install --quiet --no-warn-script-location 'kfp==2.16.0'\
+          \  &&  python3 -m pip install --quiet --no-warn-script-location 'kfp==2.16.1'\
           \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
           $0\" \"$@\"\n"
         - sh
@@ -222,7 +224,7 @@ deploymentSpec:
         - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
           \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
           \ python3 -m pip install --quiet --no-warn-script-location 'pymilvus' 'numpy'\
-          \  &&  python3 -m pip install --quiet --no-warn-script-location 'kfp==2.16.0'\
+          \  &&  python3 -m pip install --quiet --no-warn-script-location 'kfp==2.16.1'\
           \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
           $0\" \"$@\"\n"
         - sh
@@ -392,7 +394,7 @@ root:
         isOptional: true
         parameterType: NUMBER_INTEGER
       collection_name:
-        defaultValue: docs_rag
+        defaultValue: kubeflow_docs_docs_rag
         isOptional: true
         parameterType: STRING
       directory_path:
@@ -420,4 +422,4 @@ root:
         isOptional: true
         parameterType: STRING
 schemaVersion: 2.1.0
-sdkVersion: kfp-2.16.0
+sdkVersion: kfp-2.16.1

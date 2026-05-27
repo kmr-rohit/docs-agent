@@ -2,9 +2,9 @@ name: PR Safety
 
 on:
   push:
-    branches: [main, feat/test-infra]
+    branches: [main]
   pull_request:
-    branches: [main, feat/test-infra]
+    branches: [main]
 
 jobs:
   lint:

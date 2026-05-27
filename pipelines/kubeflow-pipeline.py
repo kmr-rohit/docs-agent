@@ -460,7 +460,7 @@ def github_rag_pipeline(
     chunk_overlap: int = 100,
     milvus_host: str = "my-release-milvus.docs-agent.svc.cluster.local",
     milvus_port: str = "19530",
-    collection_name: str = "docs_rag"
+    collection_name: str = "kubeflow_docs_docs_rag"
 ):
     # Download GitHub directory
     download_task = download_github_directory(
