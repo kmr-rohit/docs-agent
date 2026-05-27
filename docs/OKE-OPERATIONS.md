@@ -1,6 +1,6 @@
 # docs-agent on OKE — Operations Runbook
 
-**Branch:** `plan/cd-and-qwen-kserve`  
+**Target branch:** merge `plan/cd-and-qwen-kserve` → `main`  
 **Cluster:** OKE `context-cp5iuhfpl7a` · `us-ashburn-1` · namespace `docs-agent`  
 **Maintainers:** You + Santosh
 
@@ -208,7 +208,7 @@ kagent-feast-mcp/
   mcp-server/                        # Python MCP + Dockerfile
 
 scripts/
-  deploy-qwen-kserve.sh        # Manual KServe bring-up (no GitHub Actions)
+  deploy-qwen-kserve.sh        # Manual KServe bring-up (optional; CD also applies manifests)
 
 .github/workflows/
   oke-cicd.yaml                # CI + CD pipeline
@@ -301,7 +301,6 @@ flowchart TD
 |-------|-------------------|---------------------|
 | Pull request | Yes | **No** |
 | Push to `main` | Yes | **Yes** |
-| Push to `plan/cd-and-qwen-kserve` | Yes | **Yes** |
 | `workflow_dispatch` (manual) | Yes | **Yes** |
 
 ### Job 1 — `test-and-compile`
@@ -350,7 +349,7 @@ Configure at **Settings → Secrets and variables → Actions**. Full list: [GHC
 ### First-time CD setup checklist
 
 - [ ] All GitHub secrets configured (rotate any exposed PAT first)
-- [ ] Branch merged to `main` (or push to `plan/cd-and-qwen-kserve` for testing)
+- [ ] Branch merged to `main`
 - [ ] Watch Actions tab for green `build-and-deploy` job
 - [ ] Verify MCP pod pulls from GHCR (`kubectl describe pod -n docs-agent -l app=mcp-kubeflow-docs`)
 - [ ] Verify KServe smoke test passed in workflow logs
@@ -434,43 +433,131 @@ df -h   # on node: root should be ~239G
 
 ---
 
-## 8. Milvus ingestion (your action item)
+## 8. Milvus ingestion
 
 MCP fails with **`collection not found: kubeflow_docs_docs_rag`** when Milvus is empty.
 
 See **[MILVUS-INGESTION.md](./MILVUS-INGESTION.md)**.
 
-Pipeline parameters (already fixed in `pipelines/github_rag_pipeline.yaml`):
+**Important:** Run via **Kubeflow Pipelines UI** (upload `pipelines/github_rag_pipeline.yaml`). Provide a **`github_token`** secret/param — unauthenticated GitHub API hits rate limits and skips KServe/Pipelines docs (only ~17 files indexed in our test run).
+
+Pipeline defaults (in `pipelines/kubeflow-pipeline.py`):
 
 | Parameter | Value |
 |-----------|-------|
 | `milvus_host` | `my-release-milvus.docs-agent.svc.cluster.local` |
 | `collection_name` | `kubeflow_docs_docs_rag` |
+| `directory_path` | `content/en/docs` |
+| `github_token` | GitHub PAT (recommended) |
 
-After ingestion, re-run the Milvus collections check above.
-
----
-
-## 9. Next steps
-
-| Priority | Task | Owner | Notes |
-|----------|------|-------|-------|
-| **P0** | Run docs ingestion pipeline → populate Milvus | You | Unblocks MCP tool + citations |
-| **P0** | Configure GitHub secrets; verify CD workflow | You + Santosh | Rotate exposed PAT first |
-| **P0** | Merge `plan/cd-and-qwen-kserve` → `main` | You + Santosh | CD triggers on `main` push |
-| **P1** | Apply `cluster-local` label on live ISVC | Either | `kubectl apply -f manifests/inference-service.yaml` |
-| **P1** | Confirm no external KServe URL in ISVC status | Either | See security checks §7 |
-| **P1** | Enable Milvus PVC persistence | Either | Survives pod restarts |
-| **P2** | Restrict Kagent UI (OAuth2 / IP allowlist) | Either | UI is currently public |
-| **P2** | Add `tests/` for MCP + wire into CI | Either | CI currently skips if no tests dir |
-| **P2** | Delete unused `kagent-groq` secret | Optional | After KServe stable in prod |
-| **P3** | Staging namespace `docs-agent-staging` | Optional | Pre-main deploy validation |
-| **P3** | Scheduled incremental doc re-index | Optional | Keep Milvus fresh |
-| **P3** | Clean up stuck KFP run `github-rag-rntjb` in `user` ns | Optional | Running since prior session |
+After ingestion, re-run the Milvus collections check in §7.
 
 ---
 
-## 10. Troubleshooting
+## 9. Issues encountered & fixes (this branch)
+
+| Issue | Root cause | Fix in branch |
+|-------|------------|---------------|
+| Kagent "Connection error" | `qwen-predictor` ExternalName gateway refused in-cluster calls | Stable `qwen-llm` ClusterIP service + `ModelConfig/kserve-qwen` |
+| KServe CUDA crash | `latest-gpu` needs CUDA ≥13.2; nodes have 13.1 | Pin `kserve/huggingfaceserver:v0.17.0-gpu` |
+| GPU disk pressure | 250GB boot volume, ~36GB root FS until LVM expand | `manifests/gpu-node-lvm-expand-job.yaml` |
+| CD image pull failures | Missing GHCR pull secret | CD creates `ghcrsecret`; see [GHCR-CD-SETUP.md](./GHCR-CD-SETUP.md) |
+| Pipeline stuck `ImageInspectError` | OKE enforces fully qualified image names | `docker.io/...` prefixes in pipeline YAML |
+| Pipeline chunk step crash | Latest `transformers` needs torch ≥2.4 | `python:3.10-slim` + pinned ML deps |
+| Pipeline langchain import error | LangChain 0.3 moved text splitters | Pin `langchain==0.2.16` |
+| MCP collection not found | Milvus never ingested or wrong collection name | Run ingestion pipeline with correct params |
+| Agent no tool call / generic KServe answer | (1) Qwen skips tool with permissive prompt (2) Milvus missing KServe docs due to GitHub 403 | Tighten agent system prompt (follow-up PR); re-ingest with `github_token` |
+| KServe potentially public via Istio | Knative can attach ingress routes | `networking.kserve.io/visibility: cluster-local` on ISVC |
+
+---
+
+## 10. Merge to `main` & follow-up PR workflow
+
+### Step 1 — Merge this branch (`plan/cd-and-qwen-kserve`)
+
+1. Ensure GitHub Actions secrets are set ([GHCR-CD-SETUP.md](./GHCR-CD-SETUP.md))
+2. Open PR: `plan/cd-and-qwen-kserve` → `main`
+3. CI runs on PR (**compile/test only**, no deploy)
+4. Merge to `main` → CD runs automatically (build MCP → GHCR → deploy OKE)
+
+### Step 2 — Verify CD on `main` (first merge)
+
+| Check | Command / where |
+|-------|-----------------|
+| Workflow green | GitHub → Actions → `Build, Test, and Deploy to OKE` |
+| Image in GHCR | GitHub → Packages → `mcp-kubeflow-docs` |
+| MCP rolled out | `kubectl rollout status deployment/mcp-kubeflow-docs -n docs-agent` |
+| KServe smoke test | Workflow log: `kserve ok 200` |
+| Agent on KServe | `kubectl get agent kubeflow-docs-agent -n docs-agent -o jsonpath='{.spec.declarative.modelConfig}{"\n"}'` → `kserve-qwen` |
+
+Optional: trigger CD manually via **Actions → Build, Test, and Deploy to OKE → Run workflow** on `main`.
+
+### Step 3 — Follow-up work on a **new branch** off `main`
+
+After this merges, use a **separate branch** for incremental improvements — do not keep stacking on `plan/cd-and-qwen-kserve`:
+
+```text
+main  ← merge plan/cd-and-qwen-kserve (infra + CD + KServe + docs)
+  └── feature/agent-tool-routing     ← PR #2: force tool use, prompt fixes
+  └── feature/milvus-ingestion-fix   ← PR #3: git-clone download, github_token secret
+  └── feature/mcp-tests              ← PR #4: pytest + CI gate
+```
+
+Each follow-up PR gets CI on PR; only merges to `main` deploy to OKE.
+
+---
+
+## 11. CI/CD test plan
+
+### What CI does today (on every PR)
+
+- Python 3.10, install MCP requirements
+- `py_compile` on `kagent-feast-mcp/mcp-server/*.py`
+- `pytest` if `tests/` exists (currently skipped)
+
+### What CD does today (push to `main` or `workflow_dispatch`)
+
+1. Build + push `ghcr.io/<user>/mcp-kubeflow-docs:<sha>`
+2. OCI kubeconfig → OKE
+3. Deploy MCP, Kagent, KServe manifests
+4. Smoke test KServe chat inside predictor pod
+
+### Recommended test matrix (manual after deploy)
+
+| Layer | Test | Pass criteria |
+|-------|------|---------------|
+| **CI** | Open PR with MCP code change | `test-and-compile` green |
+| **CD** | Merge to `main` | `build-and-deploy` green, image tag = merge SHA |
+| **MCP** | Milvus collections check | `kubeflow_docs_docs_rag` exists with >1000 rows (after full ingest) |
+| **KServe** | In-cluster chat | `curl`/exec chat completion returns 200 |
+| **Agent** | Kagent UI | No connection error; KServe model responds |
+| **RAG** | Ask KServe docs question | Tool call visible + answer cites kubeflow.org URLs |
+| **Security** | ISVC URL | `*.svc.cluster.local`, not external host |
+
+### Future CI improvements (follow-up PRs)
+
+- Add `tests/test_mcp_search.py` (mock Milvus)
+- PR-only workflow: build Docker image but **do not push/deploy**
+- Optional: staging namespace deploy on `workflow_dispatch` input
+
+---
+
+## 12. Next steps (post-merge)
+
+| Priority | Task | Suggested branch |
+|----------|------|------------------|
+| **P0** | Merge `plan/cd-and-qwen-kserve` → `main`; verify CD | This PR |
+| **P0** | Re-run docs ingestion **with `github_token`** | `feature/milvus-ingestion-fix` |
+| **P1** | Tighten agent prompt: **always** call tool for Kubeflow/KServe questions | `feature/agent-tool-routing` |
+| **P1** | Switch pipeline download to `git clone` (avoid GitHub API limits) | `feature/milvus-ingestion-fix` |
+| **P1** | Apply `cluster-local` label on live ISVC if not applied | Any |
+| **P2** | Add MCP unit tests + CI gate | `feature/mcp-tests` |
+| **P2** | Milvus PVC persistence | `feature/milvus-persistence` |
+| **P2** | Restrict Kagent UI (OAuth / IP allowlist) | `feature/kagent-auth` |
+
+---
+
+## 13. Troubleshooting
 
 | Symptom | Likely cause | Fix |
 |---------|--------------|-----|
@@ -479,13 +566,15 @@ After ingestion, re-run the Milvus collections check above.
 | KServe pod disk pressure | GPU root FS not expanded | `gpu-node-lvm-expand-job.yaml` |
 | KServe CreateContainerError CUDA | `latest-gpu` needs CUDA 13.2+ | Pin `v0.17.0-gpu` in serving-runtime |
 | CD image pull `ImagePullBackOff` | Missing/bad `ghcrsecret` | Re-run CD or recreate secret |
-| Agent answers but no citations | Milvus not indexed | Ingestion pipeline |
+| Agent answers but no citations | Milvus sparse / wrong docs indexed | Re-ingest with `github_token`; see §8 |
+| Agent no tool call in UI | Qwen treats KServe as general knowledge | Follow-up: mandatory tool prompt |
+| Pipeline `403 rate limit` on download | No GitHub token | Pass `github_token` param or use git-clone download |
 | ISVC stuck Not Ready | Stop annotation or GPU scheduling | Remove stop annot; check GPU node taints |
 | Workflow smoke test timeout | Cold model download | Normal first time; check pod logs |
 
 ---
 
-## 11. Cost saving
+## 14. Cost saving
 
 Stop GPU predictor when idle (saves A10 GPU node cost if scaled to zero elsewhere):
 
@@ -503,7 +592,7 @@ Or run `./scripts/deploy-qwen-kserve.sh` after removing stop.
 
 ---
 
-## 12. Related docs
+## 15. Related docs
 
 | Doc | Purpose |
 |-----|---------|

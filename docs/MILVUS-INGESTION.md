@@ -42,9 +42,11 @@ The MCP ConfigMap expects collection **`kubeflow_docs_docs_rag`**, which is crea
 | `repo_name` | `website` |
 | `directory_path` | `content/en/docs` |
 | `base_url` | `https://www.kubeflow.org/docs` |
-| `github_token` | (optional, for rate limits) |
+| `github_token` | GitHub PAT with `public_repo` read (strongly recommended) |
 
 3. Wait for run to **Succeeded** (~15–45 min depending on cluster)
+
+**Without `github_token`:** GitHub API rate limits cause 403 errors; KServe/Pipelines docs are skipped (only ~17 files indexed in testing). Always provide a token for full corpus.
 
 ### Option B — Feast pipeline (same collection name)
 

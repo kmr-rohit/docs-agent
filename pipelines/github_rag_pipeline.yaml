@@ -5,10 +5,10 @@
 #    base_url: str [Default: 'https://www.kubeflow.org/docs']
 #    chunk_overlap: int [Default: 100.0]
 #    chunk_size: int [Default: 1000.0]
-#    collection_name: str [Default: 'docs_rag']
+#    collection_name: str [Default: 'kubeflow_docs_docs_rag']
 #    directory_path: str [Default: 'content/en']
 #    github_token: str [Default: '']
-#    milvus_host: str [Default: 'milvus-standalone-final.docs-agent.svc.cluster.local']
+#    milvus_host: str [Default: 'my-release-milvus.docs-agent.svc.cluster.local']
 #    milvus_port: str [Default: '19530']
 #    repo_name: str [Default: 'website']
 #    repo_owner: str [Default: 'kubeflow']
@@ -363,7 +363,7 @@ root:
         isOptional: true
         parameterType: NUMBER_INTEGER
       collection_name:
-        defaultValue: docs_rag
+        defaultValue: kubeflow_docs_docs_rag
         isOptional: true
         parameterType: STRING
       directory_path:
@@ -375,7 +375,7 @@ root:
         isOptional: true
         parameterType: STRING
       milvus_host:
-        defaultValue: milvus-standalone-final.docs-agent.svc.cluster.local
+        defaultValue: my-release-milvus.docs-agent.svc.cluster.local
         isOptional: true
         parameterType: STRING
       milvus_port:

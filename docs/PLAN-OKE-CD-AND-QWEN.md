@@ -1,7 +1,7 @@
 # OKE CD + Qwen/KServe Migration Plan
 
-> **Status:** Largely implemented on branch `plan/cd-and-qwen-kserve`.  
-> **Current runbook:** see **[OKE-OPERATIONS.md](./OKE-OPERATIONS.md)** for architecture, security, CI/CD, scripts, checklist, and next steps.
+> **Status:** Ready to merge `plan/cd-and-qwen-kserve` → `main`.  
+> **Runbook:** see **[OKE-OPERATIONS.md](./OKE-OPERATIONS.md)** for architecture, merge workflow, CI/CD test plan, issues/fixes, and checklists.
 
 This file retains the original planning notes for context.
 
