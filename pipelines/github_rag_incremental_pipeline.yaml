@@ -168,7 +168,7 @@ deploymentSpec:
           \ update\")\n\n    with open(embedded_data.path, 'w', encoding='utf-8')\
           \ as f:\n        for record in records:\n            f.write(json.dumps(record,\
           \ ensure_ascii=False) + '\\n')\n\n"
-        image: pytorch/pytorch:2.3.0-cuda12.1-cudnn8-runtime
+        image: docker.io/pytorch/pytorch:2.3.0-cuda12.1-cudnn8-runtime
     exec-delete-old-vectors:
       container:
         args:
@@ -225,7 +225,7 @@ deploymentSpec:
           \ {deleted_count}\")\n\n    except Exception as e:\n        print(f\"Error\
           \ connecting to collection {collection_name}: {e}\")\n        print(\"Collection\
           \ might not exist yet - this is okay for first run\")\n\n"
-        image: python:3.9
+        image: docker.io/library/python:3.9
     exec-download-specific-files:
       container:
         args:
@@ -281,7 +281,7 @@ deploymentSpec:
           \ files\")\n\n    # Save to output dataset\n    with open(github_data.path,\
           \ 'w', encoding='utf-8') as f:\n        for file_data in files:\n      \
           \      f.write(json.dumps(file_data, ensure_ascii=False) + '\\n')\n\n"
-        image: python:3.9
+        image: docker.io/library/python:3.9
     exec-store-milvus-incremental:
       container:
         args:
@@ -359,7 +359,7 @@ deploymentSpec:
           \            print(f\"Index operation result: {e}\")\n\n        print(f\"\
           \u2705 Inserted {len(records)} new records. Total collection size: {collection.num_entities}\"\
           )\n    else:\n        print(\"No records to insert\")\n\n"
-        image: python:3.9
+        image: docker.io/library/python:3.9
 pipelineInfo:
   description: Incremental RAG pipeline for processing only changed GitHub files
   name: github-rag-incremental-build

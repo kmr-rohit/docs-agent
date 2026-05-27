@@ -81,6 +81,31 @@ kubectl get workflows -n user
 # kubectl delete workflow github-rag-rntjb -n user   # if stuck >24h
 ```
 
+### ImageInspectError — `short name mode is enforcing`
+
+If a run shows **Running** forever and the `chunk-and-embed` pod has `ImageInspectError`:
+
+```
+Failed to inspect image "": short name mode is enforcing, but image name
+pytorch/pytorch:2.3.0-cuda12.1-cudnn8-runtime returns ambiguous list
+```
+
+**Cause:** OKE nodes require **fully qualified** image names (e.g. `docker.io/pytorch/...`, not `pytorch/pytorch:...`).
+
+**Fix:**
+
+1. Terminate the stuck run in KFP UI (or `kubectl delete workflow <name> -n user`)
+2. Re-upload **`pipelines/github_rag_pipeline.yaml`** from this repo (images are prefixed with `docker.io/`)
+3. Start a new run with the same parameters
+
+Check pod status:
+
+```bash
+kubectl get workflows -n user
+kubectl get pods -n user | rg ImageInspect
+kubectl describe pod -n user <chunk-and-embed-impl-pod> | rg -A2 Events
+```
+
 ## Long-term
 
 - Enable **Milvus persistence** (PVC) in Helm values so reindex survives restarts
