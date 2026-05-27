@@ -1,5 +1,5 @@
 # PIPELINE DEFINITION
-# Name: github-rag-full-build
+# Name: github-rag
 # Description: RAG pipeline for processing GitHub documentation
 # Inputs:
 #    base_url: str [Default: 'https://www.kubeflow.org/docs']
@@ -83,10 +83,11 @@ deploymentSpec:
         - -c
         - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
           \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
-          \ python3 -m pip install --quiet --no-warn-script-location 'sentence-transformers'\
-          \ 'langchain'  &&  python3 -m pip install --quiet --no-warn-script-location\
-          \ 'kfp==2.14.2' '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"\
-          3.9\"' && \"$0\" \"$@\"\n"
+          \ python3 -m pip install --quiet --no-warn-script-location 'sentence-transformers==2.7.0'\
+          \ 'transformers==4.40.2' 'torch==2.3.0' 'langchain==0.2.16'  &&  python3\
+          \ -m pip install --quiet --no-warn-script-location 'kfp==2.16.1' '--no-deps'\
+          \ 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"$0\" \"$@\"\
+          \n"
         - sh
         - -ec
         - 'program_path=$(mktemp -d)
@@ -154,7 +155,7 @@ deploymentSpec:
           \ with open(embedded_data.path, 'w', encoding='utf-8') as f:\n        for\
           \ record in records:\n            f.write(json.dumps(record, ensure_ascii=False)\
           \ + '\\n')\n\n"
-        image: docker.io/pytorch/pytorch:2.3.0-cuda12.1-cudnn8-runtime
+        image: docker.io/library/python:3.10-slim
     exec-download-github-directory:
       container:
         args:
@@ -168,7 +169,7 @@ deploymentSpec:
         - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
           \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
           \ python3 -m pip install --quiet --no-warn-script-location 'requests' 'beautifulsoup4'\
-          \  &&  python3 -m pip install --quiet --no-warn-script-location 'kfp==2.14.2'\
+          \  &&  python3 -m pip install --quiet --no-warn-script-location 'kfp==2.16.1'\
           \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
           $0\" \"$@\"\n"
         - sh
@@ -222,7 +223,7 @@ deploymentSpec:
         - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
           \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
           \ python3 -m pip install --quiet --no-warn-script-location 'pymilvus' 'numpy'\
-          \  &&  python3 -m pip install --quiet --no-warn-script-location 'kfp==2.14.2'\
+          \  &&  python3 -m pip install --quiet --no-warn-script-location 'kfp==2.16.1'\
           \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"\
           $0\" \"$@\"\n"
         - sh
@@ -280,7 +281,7 @@ deploymentSpec:
         image: docker.io/library/python:3.9
 pipelineInfo:
   description: RAG pipeline for processing GitHub documentation
-  name: github-rag-full-build
+  name: github-rag
 root:
   dag:
     tasks:
@@ -362,7 +363,7 @@ root:
         isOptional: true
         parameterType: NUMBER_INTEGER
       collection_name:
-        defaultValue: kubeflow_docs_docs_rag
+        defaultValue: docs_rag
         isOptional: true
         parameterType: STRING
       directory_path:
@@ -374,7 +375,7 @@ root:
         isOptional: true
         parameterType: STRING
       milvus_host:
-        defaultValue: my-release-milvus.docs-agent.svc.cluster.local
+        defaultValue: milvus-standalone-final.docs-agent.svc.cluster.local
         isOptional: true
         parameterType: STRING
       milvus_port:
@@ -390,4 +391,4 @@ root:
         isOptional: true
         parameterType: STRING
 schemaVersion: 2.1.0
-sdkVersion: kfp-2.14.2
+sdkVersion: kfp-2.16.1

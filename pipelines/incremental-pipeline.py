@@ -139,8 +139,13 @@ def delete_old_vectors(
 
 
 @dsl.component(
-    base_image="docker.io/pytorch/pytorch:2.3.0-cuda12.1-cudnn8-runtime",
-    packages_to_install=["sentence-transformers", "langchain"]
+    base_image="docker.io/library/python:3.10-slim",
+    packages_to_install=[
+        "sentence-transformers==2.7.0",
+        "transformers==4.40.2",
+        "torch==2.3.0",
+        "langchain==0.2.16",
+    ],
 )
 def chunk_and_embed_incremental(
     github_data: dsl.Input[dsl.Dataset],
