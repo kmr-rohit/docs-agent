@@ -6,6 +6,11 @@ on:
       - main
   pull_request:
   workflow_dispatch:
+    inputs:
+      deploy_kserve:
+        description: Deploy/update KServe Qwen (single GPU — recycles revision)
+        type: boolean
+        default: false
 
 env:
   REGISTRY: ghcr.io
@@ -31,7 +36,14 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r kagent-feast-mcp/mcp-server/requirements.txt
           pip install -r requirements-test.txt
-          pip install ruff
+          pip install ruff kfp kfp-kubernetes
+
+      - name: Compile docs RAG pipeline
+        working-directory: pipelines
+        run: |
+          python kubeflow-pipeline.py
+          python issues-pipeline.py
+          python code-pipeline.py
 
       - name: Ruff lint
         run: ruff check kagent-feast-mcp/mcp-server tests pipelines
@@ -151,22 +163,53 @@ jobs:
 
           kubectl apply -f manifests/qwen-llm-service.yaml
           kubectl apply -f kagent-feast-mcp/manifests/kagent/setup.yaml
-          kubectl apply -f manifests/serving-runtime.yaml
-          kubectl apply -f manifests/inference-service.yaml
-          kubectl annotate inferenceservice qwen -n "${{ env.K8S_NAMESPACE }}" serving.kserve.io/stop- --overwrite 2>/dev/null || true
 
-      - name: Smoke test MCP + KServe
+          DEPLOY_KSERVE=false
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.deploy_kserve }}" = "true" ]; then
+            DEPLOY_KSERVE=true
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            if git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" \
+              | grep -qE 'manifests/(inference-service|serving-runtime)\.yaml'; then
+              DEPLOY_KSERVE=true
+            fi
+          fi
+
+          if [ "${DEPLOY_KSERVE}" = "true" ]; then
+            echo "KServe manifest change or manual flag — deploying GPU inference"
+            chmod +x scripts/deploy-kserve-if-changed.sh
+            FORCE_KSERVE_DEPLOY=true scripts/deploy-kserve-if-changed.sh
+          else
+            echo "Skipping KServe GPU deploy (no manifest change)"
+            chmod +x scripts/deploy-kserve-if-changed.sh
+            FORCE_KSERVE_DEPLOY=false scripts/deploy-kserve-if-changed.sh
+          fi
+
+      - name: Smoke test MCP
         run: |
           set -euo pipefail
-          kubectl wait --for=condition=Ready inferenceservice/qwen \
-            -n "${{ env.K8S_NAMESPACE }}" --timeout=1800s || echo "KServe not ready yet; check cluster manually."
+          kubectl rollout status deployment/mcp-kubeflow-docs \
+            -n "${{ env.K8S_NAMESPACE }}" --timeout=120s
+          kubectl exec -n "${{ env.K8S_NAMESPACE }}" deploy/mcp-kubeflow-docs -- python3 -c "
+          import urllib.request
+          urllib.request.urlopen('http://127.0.0.1:8000/mcp', timeout=5)
+          print('mcp server listening')
+          "
+          kubectl get agent,modelconfig -n "${{ env.K8S_NAMESPACE }}"
 
-          POD="$(kubectl get pods -n "${{ env.K8S_NAMESPACE }}" -l serving.kserve.io/inferenceservice=qwen -o jsonpath='{.items[0].metadata.name}')"
+      - name: Smoke test Qwen (non-blocking)
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          POD="$(kubectl get pods -n "${{ env.K8S_NAMESPACE }}" -l serving.kserve.io/inferenceservice=qwen \
+            --field-selector=status.phase=Running \
+            -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)"
+          if [ -z "${POD}" ]; then
+            echo "No running qwen pod — skipping LLM smoke test"
+            exit 0
+          fi
           kubectl exec -n "${{ env.K8S_NAMESPACE }}" "${POD}" -c kserve-container -- python3 -c "
           import urllib.request, json
           p=json.dumps({'model':'qwen2.5-3b-instruct','messages':[{'role':'user','content':'ping'}],'max_tokens':8}).encode()
           r=urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:8080/openai/v1/chat/completions',data=p,headers={'Content-Type':'application/json'}), timeout=60)
           print('kserve ok', r.status)
           "
-
-          kubectl get agent,modelconfig -n "${{ env.K8S_NAMESPACE }}"

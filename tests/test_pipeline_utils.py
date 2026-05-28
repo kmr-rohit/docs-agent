@@ -7,7 +7,32 @@ from pathlib import Path
 PIPELINES_DIR = Path(__file__).parent.parent / "pipelines"
 sys.path.insert(0, str(PIPELINES_DIR))
 
-from utils import clean_content
+from utils import clean_content, resolve_github_token
+
+
+class TestResolveGithubToken:
+    """Tests for resolve_github_token."""
+
+    def test_prefers_explicit_parameter(self, monkeypatch):
+        monkeypatch.setenv("Github_Pat", "env-pat")
+        monkeypatch.setenv("GITHUB_TOKEN", "fallback")
+        assert resolve_github_token("param-pat") == "param-pat"
+
+    def test_falls_back_to_github_pat_env(self, monkeypatch):
+        monkeypatch.setenv("Github_Pat", "env-pat")
+        monkeypatch.setenv("GITHUB_TOKEN", "fallback")
+        assert resolve_github_token("") == "env-pat"
+
+    def test_falls_back_to_github_token_env(self, monkeypatch):
+        monkeypatch.delenv("Github_Pat", raising=False)
+        monkeypatch.setenv("GITHUB_TOKEN", "fallback")
+        assert resolve_github_token("") == "fallback"
+
+    def test_returns_empty_when_unset(self, monkeypatch):
+        monkeypatch.delenv("Github_Pat", raising=False)
+        monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+        assert resolve_github_token("") == ""
+        assert resolve_github_token("   ") == ""
 
 
 class TestCleanContent:

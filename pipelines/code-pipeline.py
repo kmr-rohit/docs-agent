@@ -3,6 +3,10 @@ from kfp import dsl
 from kfp.dsl import *
 from typing import *
 
+try:
+    import kfp.kubernetes as k8s
+except ImportError:  # pragma: no cover
+    k8s = None
 
 @dsl.component(
     base_image="docker.io/python:3.9",
@@ -33,6 +37,19 @@ def download_github_code(
     import json
     import base64
     import time
+    import os
+
+    def resolve_github_token(token):
+        for candidate in (token, os.environ.get("Github_Pat"), os.environ.get("GITHUB_TOKEN")):
+            if candidate and str(candidate).strip():
+                return str(candidate).strip()
+        return ""
+
+    github_token = resolve_github_token(github_token)
+    if github_token:
+        print("Using authenticated GitHub API requests")
+    else:
+        print("WARNING: No github_token or Github_Pat env set; rate limits will be low (60 req/hr)")
 
     headers = {"Authorization": f"token {github_token}"} if github_token else {}
     extensions = [ext.strip().lstrip(".") for ext in file_extensions.split(",")]
@@ -525,6 +542,13 @@ def code_rag_pipeline(
         file_extensions=file_extensions,
         github_token=github_token,
     )
+
+    if k8s is not None:
+        k8s.use_secret_as_env(
+            download_task,
+            secret_name="github-pat",
+            secret_key_to_env={"Github_Pat": "Github_Pat"},
+        )
 
     chunk_task = chunk_and_embed_code(
         code_data=download_task.outputs["code_data"],
