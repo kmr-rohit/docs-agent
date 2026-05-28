@@ -1,4 +1,5 @@
 kfp
+kfp-kubernetes
 requests
 beautifulsoup4
 sentence-transformers

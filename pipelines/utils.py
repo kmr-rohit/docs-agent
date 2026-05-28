@@ -1,6 +1,23 @@
 """Shared utility functions for pipeline components."""
 
+import os
 import re
+
+
+def resolve_github_token(github_token: str = "") -> str:
+    """Resolve a GitHub PAT from the pipeline parameter or environment.
+
+    Checks ``github_token`` first, then ``Github_Pat`` (repo/OKE secret name),
+    then ``GITHUB_TOKEN`` for compatibility with other tooling.
+    """
+    for candidate in (
+        github_token,
+        os.environ.get("Github_Pat", ""),
+        os.environ.get("GITHUB_TOKEN", ""),
+    ):
+        if candidate and candidate.strip():
+            return candidate.strip()
+    return ""
 
 
 def clean_content(content: str) -> str:

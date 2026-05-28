@@ -3,6 +3,11 @@ from kfp import dsl
 from kfp.dsl import *
 from typing import *
 
+try:
+    import kfp.kubernetes as k8s
+except ImportError:  # pragma: no cover - optional at compile time
+    k8s = None
+
 @dsl.component(
     base_image="docker.io/library/python:3.9",
     packages_to_install=["requests", "beautifulsoup4"]
@@ -14,44 +19,84 @@ def download_github_directory(
     github_token: str,
     github_data: dsl.Output[dsl.Dataset]
 ):
+    import os
     import requests
     import json
     import base64
+    import time
     from bs4 import BeautifulSoup
 
+    def resolve_github_token(token):
+        for candidate in (token, os.environ.get("Github_Pat"), os.environ.get("GITHUB_TOKEN")):
+            if candidate and str(candidate).strip():
+                return str(candidate).strip()
+        return ""
+
+    github_token = resolve_github_token(github_token)
+    if github_token:
+        print("Using authenticated GitHub API requests")
+    else:
+        print("WARNING: No github_token or Github_Pat env set; rate limits will be low (60 req/hr)")
+
     headers = {"Authorization": f"token {github_token}"} if github_token else {}
-    api_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/contents/{directory_path}"
+
+    def api_request(url, params=None):
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                resp = requests.get(url, params=params, headers=headers)
+
+                if resp.status_code == 403:
+                    remaining = resp.headers.get("X-RateLimit-Remaining", "0")
+                    if remaining == "0":
+                        reset_time = int(resp.headers.get("X-RateLimit-Reset", 0))
+                        wait_time = max(reset_time - int(time.time()), 60)
+                        print(f"Rate limited. Waiting {wait_time}s...")
+                        time.sleep(min(wait_time, 300))
+                        continue
+                    print(f"Forbidden (403) for {url}: {resp.text[:200]}")
+
+                if resp.status_code == 200:
+                    return resp.json()
+
+                print(f"API error: HTTP {resp.status_code} for {url}")
+                return None
+
+            except Exception as e:
+                print(f"Request failed (attempt {attempt + 1}): {e}")
+                time.sleep(2 ** attempt)
+
+        return None
 
     def get_files_recursive(url):
         files = []
-        try:
-            response = requests.get(url, headers=headers)
-            response.raise_for_status()
-            items = response.json()
+        items = api_request(url)
+        if not items or not isinstance(items, list):
+            return files
 
-            for item in items:
-                if item['type'] == 'file' and (item['name'].endswith('.md') or item['name'].endswith('.html')):
-                    file_response = requests.get(item['url'], headers=headers)
-                    file_response.raise_for_status()
-                    file_data = file_response.json()
-                    content = base64.b64decode(file_data['content']).decode('utf-8')
+        for item in items:
+            if item['type'] == 'file' and (item['name'].endswith('.md') or item['name'].endswith('.html')):
+                file_data = api_request(item['url'])
+                if not file_data or 'content' not in file_data:
+                    print(f"Skipping unreadable file: {item['path']}")
+                    continue
+                content = base64.b64decode(file_data['content']).decode('utf-8')
 
-                    # Extract text from HTML files
-                    if item['name'].endswith('.html'):
-                        soup = BeautifulSoup(content, 'html.parser')
-                        content = soup.get_text(separator=' ', strip=True)
+                if item['name'].endswith('.html'):
+                    soup = BeautifulSoup(content, 'html.parser')
+                    content = soup.get_text(separator=' ', strip=True)
 
-                    files.append({
-                        'path': item['path'],
-                        'content': content,
-                        'file_name': item['name']
-                    })
-                elif item['type'] == 'dir':
-                    files.extend(get_files_recursive(item['url']))
-        except Exception as e:
-            print(f"Error fetching {url}: {e}")
+                files.append({
+                    'path': item['path'],
+                    'content': content,
+                    'file_name': item['name']
+                })
+            elif item['type'] == 'dir':
+                files.extend(get_files_recursive(item['url']))
+
         return files
 
+    api_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/contents/{directory_path}"
     files = get_files_recursive(api_url)
     print(f"Downloaded {len(files)} files")
 
@@ -85,6 +130,19 @@ def download_github_issues(
     import requests
     import json
     import time
+    import os
+
+    def resolve_github_token(token):
+        for candidate in (token, os.environ.get("Github_Pat"), os.environ.get("GITHUB_TOKEN")):
+            if candidate and str(candidate).strip():
+                return str(candidate).strip()
+        return ""
+
+    github_token = resolve_github_token(github_token)
+    if github_token:
+        print("Using authenticated GitHub API requests")
+    else:
+        print("WARNING: No github_token or Github_Pat env set; rate limits will be low (60 req/hr)")
 
     headers = {"Authorization": f"token {github_token}"} if github_token else {}
     all_issues = []
@@ -453,7 +511,7 @@ def store_milvus(
 def github_rag_pipeline(
     repo_owner: str = "kubeflow",
     repo_name: str = "website", 
-    directory_path: str = "content/en",
+    directory_path: str = "content/en/docs",
     github_token: str = "",
     base_url: str = "https://www.kubeflow.org/docs",
     chunk_size: int = 1000,
@@ -469,6 +527,13 @@ def github_rag_pipeline(
         directory_path=directory_path,
         github_token=github_token
     )
+
+    if k8s is not None:
+        k8s.use_secret_as_env(
+            download_task,
+            secret_name="github-pat",
+            secret_key_to_env={"Github_Pat": "Github_Pat"},
+        )
     
     # Chunk and embed the content
     chunk_task = chunk_and_embed(
