@@ -50,6 +50,13 @@ jobs:
     permissions:
       contents: read
       packages: write
+    env:
+      # oracle-actions/configure-kubectl-oke expects OCI_CLI_* env vars
+      OCI_CLI_USER: ${{ secrets.OCI_USER_OCID }}
+      OCI_CLI_TENANCY: ${{ secrets.OCI_TENANCY_OCID }}
+      OCI_CLI_FINGERPRINT: ${{ secrets.OCI_FINGERPRINT }}
+      OCI_CLI_KEY_CONTENT: ${{ secrets.OCI_KEY_FILE }}
+      OCI_CLI_REGION: ${{ secrets.OCI_REGION }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -74,24 +81,10 @@ jobs:
             ${{ env.REGISTRY }}/${{ secrets.GHCR_USERNAME }}/${{ env.IMAGE_NAME }}:${{ env.tag }}
             ${{ env.REGISTRY }}/${{ secrets.GHCR_USERNAME }}/${{ env.IMAGE_NAME }}:latest
 
-      - name: Install OCI CLI
-        uses: oracle-actions/setup-oci-cli@v1.2.0
+      - name: Configure kubectl for OKE
+        uses: oracle-actions/configure-kubectl-oke@v1.5.0
         with:
-          oci-user: ${{ secrets.OCI_USER_OCID }}
-          oci-tenancy: ${{ secrets.OCI_TENANCY_OCID }}
-          oci-region: ${{ secrets.OCI_REGION }}
-          oci-key-file: ${{ secrets.OCI_KEY_FILE }}
-          oci-fingerprint: ${{ secrets.OCI_FINGERPRINT }}
-
-      - name: Generate Kubeconfig for OKE
-        run: |
-          mkdir -p ~/.kube
-          oci ce cluster create-kubeconfig \
-            --cluster-id ${{ env.OKE_CLUSTER_OCID }} \
-            --file ~/.kube/config \
-            --region ${{ secrets.OCI_REGION }} \
-            --token-version 2.0.0
-          chmod 600 ~/.kube/config
+          cluster: ${{ secrets.OKE_CLUSTER_OCID }}
 
       - name: Deploy to OKE
         env:
