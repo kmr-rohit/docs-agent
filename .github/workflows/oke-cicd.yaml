@@ -145,15 +145,17 @@ jobs:
           kubectl create namespace "${{ env.K8S_NAMESPACE }}" --dry-run=client -o yaml | kubectl apply -f -
 
           if [ -n "${{ secrets.Github_Pat }}" ]; then
-            for ns in "${{ env.K8S_NAMESPACE }}" user; do
-              kubectl create secret generic github-pat \
-                --namespace "${ns}" \
-                --from-literal=Github_Pat="${{ secrets.Github_Pat }}" \
-                --dry-run=client -o yaml | kubectl apply -f -
-            done
+            PAT="${{ secrets.Github_Pat }}"
           else
-            echo "Github_Pat secret not set; skipping github-pat K8s secret (pipeline rate limits may apply)"
+            PAT=""
+            echo "Github_Pat secret not set; creating empty github-pat placeholder for pipeline mounts"
           fi
+          for ns in "${{ env.K8S_NAMESPACE }}" user; do
+            kubectl create secret generic github-pat \
+              --namespace "${ns}" \
+              --from-literal=Github_Pat="${PAT}" \
+              --dry-run=client -o yaml | kubectl apply -f -
+          done
 
           kubectl create secret docker-registry ghcrsecret \
             --namespace "${{ env.K8S_NAMESPACE }}" \

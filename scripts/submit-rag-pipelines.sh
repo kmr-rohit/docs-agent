@@ -44,16 +44,18 @@ resolve_github_pat() {
 }
 
 ensure_github_pat_secrets() {
-  if [[ -z "${GITHUB_PAT:-}" ]]; then
-    return 0
-  fi
+  local pat="${GITHUB_PAT:-}"
   for ns in docs-agent "$KFP_NAMESPACE"; do
     kubectl create namespace "$ns" --dry-run=client -o yaml | kubectl apply -f - >/dev/null
     kubectl create secret generic github-pat \
       --namespace "$ns" \
-      --from-literal=Github_Pat="${GITHUB_PAT}" \
+      --from-literal=Github_Pat="${pat}" \
       --dry-run=client -o yaml | kubectl apply -f -
-    echo "==> Ensured github-pat secret in namespace ${ns}"
+    if [[ -n "$pat" ]]; then
+      echo "==> Ensured github-pat secret (with token) in namespace ${ns}"
+    else
+      echo "==> Ensured github-pat secret placeholder in namespace ${ns} (set GITHUB_PAT for auth)"
+    fi
   done
 }
 
