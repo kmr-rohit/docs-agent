@@ -47,6 +47,8 @@ jobs:
     needs: test-and-compile
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    # Secrets are stored under Settings → Environments → kubeflow (not repo secrets)
+    environment: kubeflow
     permissions:
       contents: read
       packages: write
@@ -82,15 +84,20 @@ jobs:
             missing+=("GHCR_TOKEN or GHCR_PULL_TOKEN or Github_Pat (needs read:packages for cluster image pull)")
           fi
           if [ "${#missing[@]}" -gt 0 ]; then
-            echo "::error::Missing required GitHub Actions secrets:"
+            echo "::error::Missing required GitHub Actions secrets in environment 'kubeflow':"
             printf '  - %s\n' "${missing[@]}"
+            echo "Add them under Settings → Environments → kubeflow → Environment secrets."
             exit 1
           fi
 
       - name: Set image coordinates
+        env:
+          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
         run: |
           owner_lc="$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')"
+          ghcr_user="${GHCR_USERNAME:-$owner_lc}"
           echo "IMAGE_REPO=ghcr.io/${owner_lc}/${{ env.IMAGE_NAME }}" >> "$GITHUB_ENV"
+          echo "GHCR_USERNAME=${ghcr_user}" >> "$GITHUB_ENV"
           echo "tag=${GITHUB_SHA::7}" >> "$GITHUB_ENV"
 
       - name: Log in to GHCR
@@ -119,18 +126,18 @@ jobs:
         env:
           FULL_IMAGE: ${{ env.IMAGE_REPO }}:${{ env.tag }}
           GHCR_PULL_TOKEN: ${{ secrets.GHCR_TOKEN || secrets.GHCR_PULL_TOKEN || secrets.Github_Pat }}
+          GHCR_USERNAME: ${{ env.GHCR_USERNAME }}
         run: |
           set -euo pipefail
-          owner_lc="$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')"
 
           kubectl create namespace "${{ env.K8S_NAMESPACE }}" --dry-run=client -o yaml | kubectl apply -f -
 
           kubectl create secret docker-registry ghcrsecret \
             --namespace "${{ env.K8S_NAMESPACE }}" \
             --docker-server="${{ env.REGISTRY }}" \
-            --docker-username="${owner_lc}" \
+            --docker-username="${GHCR_USERNAME}" \
             --docker-password="${GHCR_PULL_TOKEN}" \
-            --docker-email="${owner_lc}@users.noreply.github.com" \
+            --docker-email="${GHCR_USERNAME}@users.noreply.github.com" \
             --dry-run=client -o yaml | kubectl apply -f -
 
           kubectl apply -f kagent-feast-mcp/manifests/mcp-server/mcp-server.yaml
