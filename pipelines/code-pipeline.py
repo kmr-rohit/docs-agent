@@ -3,6 +3,10 @@ from kfp import dsl
 from kfp.dsl import *
 from typing import *
 
+try:
+    import kfp.kubernetes as k8s
+except ImportError:  # pragma: no cover
+    k8s = None
 
 @dsl.component(
     base_image="docker.io/python:3.9",
@@ -538,6 +542,13 @@ def code_rag_pipeline(
         file_extensions=file_extensions,
         github_token=github_token,
     )
+
+    if k8s is not None:
+        k8s.use_secret_as_env(
+            download_task,
+            secret_name="github-pat",
+            secret_key_to_env={"Github_Pat": "Github_Pat"},
+        )
 
     chunk_task = chunk_and_embed_code(
         code_data=download_task.outputs["code_data"],

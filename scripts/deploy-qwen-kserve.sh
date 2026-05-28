@@ -32,16 +32,8 @@ else
   echo "==> HF_TOKEN not set; skipping huggingface-secret (Qwen2.5-3B-Instruct is public)"
 fi
 
-echo "==> Applying KServe ServingRuntime + InferenceService"
-kubectl apply -f "${ROOT_DIR}/manifests/serving-runtime.yaml"
-kubectl apply -f "${ROOT_DIR}/manifests/inference-service.yaml"
-kubectl apply -f "${ROOT_DIR}/manifests/qwen-llm-service.yaml"
-
-echo "==> Starting InferenceService (remove stop annotation if present)"
-kubectl annotate inferenceservice qwen -n "${NAMESPACE}" serving.kserve.io/stop- --overwrite 2>/dev/null || true
-
-echo "==> Waiting for InferenceService Ready (up to 30m — image + model download)"
-kubectl wait --for=condition=Ready inferenceservice/qwen -n "${NAMESPACE}" --timeout=1800s
+echo "==> Applying KServe ServingRuntime + InferenceService (single-GPU recycle)"
+FORCE_KSERVE_DEPLOY=true "${ROOT_DIR}/scripts/deploy-kserve-if-changed.sh"
 
 URL="$(kubectl get inferenceservice qwen -n "${NAMESPACE}" -o jsonpath='{.status.url}' 2>/dev/null || true)"
 PREDICTOR_HOST="qwen-llm.${NAMESPACE}.svc.cluster.local"
