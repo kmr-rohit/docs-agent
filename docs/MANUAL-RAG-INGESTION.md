@@ -66,13 +66,34 @@ Optional: same secret in `docs-agent` if you run ad-hoc jobs there.
 
 ### Option A — Kubeflow Pipelines UI (recommended)
 
-1. Port-forward the UI:
+**Multi-user mode:** every run must belong to a **profile namespace** (e.g. `user`, `amlc-bruce`).
+Port-forwarding only the pipeline UI often leaves namespace empty and causes:
+
+`An experiment cannot have an empty namespace in multi-user mode`
+
+**Do this instead:**
+
+1. Port-forward the **Central Dashboard** (not just ml-pipeline-ui):
    ```bash
    kubectl port-forward -n kubeflow svc/ml-pipeline-ui 8080:80
    ```
-2. Open http://localhost:8080 → **Upload pipeline** → select compiled YAML from `pipelines/`.
-3. **Create run** with defaults (or override parameters below).
-4. Leave `github_token` **empty** if `github-pat` secret is mounted; or paste PAT directly.
+   Or use your cluster’s Kubeflow dashboard URL if you have one (Istio ingress / LoadBalancer).
+
+2. Open http://localhost:8080 and **log in as your Kubeflow user** (Dex/email).
+
+3. Confirm your namespace — on OKE you likely have one of:
+   ```bash
+   kubectl get profile
+   ```
+   Common names: `user`, `amlc-bruce`, `amlc-carl`. Pipeline pods and secrets run in **that** namespace.
+
+4. **Pipelines** → **Upload pipeline** → select compiled YAML from `pipelines/`.
+
+5. **Create run** → ensure the UI shows your namespace (top bar / experiment), not blank.
+
+6. Leave `github_token` **empty** if `github-pat` secret exists in your profile namespace; or paste PAT.
+
+If you still see the namespace error from the UI, use **Option B** (Python client with explicit `namespace=`).
 
 Run order (each is independent; run only what you need):
 
@@ -89,7 +110,13 @@ kubectl port-forward -n kubeflow svc/ml-pipeline 8888:8888 &
 ```python
 import kfp
 
-client = kfp.Client(host="http://localhost:8888")
+# REQUIRED in multi-user mode — use YOUR profile namespace from: kubectl get profile
+NAMESPACE = "user"  # or amlc-bruce / amlc-carl
+
+client = kfp.Client(host="http://localhost:8888", namespace=NAMESPACE)
+
+# Create experiment in that namespace first (avoids empty-namespace error)
+client.create_experiment(name="rag-ingestion", namespace=NAMESPACE)
 
 for name, path in [
     ("docs", "pipelines/github_rag_pipeline.yaml"),
@@ -99,7 +126,8 @@ for name, path in [
     result = client.create_run_from_pipeline_package(
         pipeline_file=path,
         run_name=f"{name}-rag-manual",
-        namespace="user",
+        experiment_name="rag-ingestion",
+        namespace=NAMESPACE,
         enable_caching=False,
         arguments={"github_token": ""},
     )
@@ -199,7 +227,8 @@ Ask: *"How do I deploy a model with KServe on Kubeflow?"* — agent should call
 
 | Symptom | Fix |
 |---------|-----|
-| Pipeline pod `secret "github-pat" not found` | Create secret in `user` namespace (step 2) |
+| `experiment cannot have an empty namespace in multi-user mode` | Set namespace to your profile (`kubectl get profile` → e.g. `user`). Use Python client with `namespace=` or log in via Central Dashboard before creating a run |
+| Pipeline pod `secret "github-pat" not found` | Create secret in **your profile** namespace (step 2), not only `docs-agent` |
 | Download very slow / 403 in logs | Set `GITHUB_PAT` / `github-pat` secret |
 | `issues_rag` / `code_rag` tool returns empty | Collection not created yet — run that pipeline |
 | Embed step slow | Normal on CPU; chunk step uses PyTorch without GPU |
