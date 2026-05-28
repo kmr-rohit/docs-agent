@@ -144,19 +144,6 @@ jobs:
 
           kubectl create namespace "${{ env.K8S_NAMESPACE }}" --dry-run=client -o yaml | kubectl apply -f -
 
-          if [ -n "${{ secrets.Github_Pat }}" ]; then
-            PAT="${{ secrets.Github_Pat }}"
-          else
-            PAT=""
-            echo "Github_Pat secret not set; creating empty github-pat placeholder for pipeline mounts"
-          fi
-          for ns in "${{ env.K8S_NAMESPACE }}" user; do
-            kubectl create secret generic github-pat \
-              --namespace "${ns}" \
-              --from-literal=Github_Pat="${PAT}" \
-              --dry-run=client -o yaml | kubectl apply -f -
-          done
-
           kubectl create secret docker-registry ghcrsecret \
             --namespace "${{ env.K8S_NAMESPACE }}" \
             --docker-server="${{ env.REGISTRY }}" \
@@ -203,9 +190,9 @@ jobs:
           kubectl rollout status deployment/mcp-kubeflow-docs \
             -n "${{ env.K8S_NAMESPACE }}" --timeout=120s
           kubectl exec -n "${{ env.K8S_NAMESPACE }}" deploy/mcp-kubeflow-docs -- python3 -c "
-          from pymilvus import connections, utility
-          connections.connect('default', host='my-release-milvus.docs-agent.svc.cluster.local', port='19530')
-          print('milvus ok, collections:', utility.list_collections())
+          import urllib.request
+          urllib.request.urlopen('http://127.0.0.1:8000/mcp', timeout=5)
+          print('mcp server listening')
           "
           kubectl get agent,modelconfig -n "${{ env.K8S_NAMESPACE }}"
 
