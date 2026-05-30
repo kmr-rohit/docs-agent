@@ -27,6 +27,6 @@ run = client.create_run_from_pipeline_package(
     enable_caching=False,
 )
 
-print(f"Run submitted!")
+print("Run submitted!")
 print(f"Run ID  : {run.run_id}")
 print(f"View at : {KFP_HOST}/#/runs/details/{run.run_id}")
