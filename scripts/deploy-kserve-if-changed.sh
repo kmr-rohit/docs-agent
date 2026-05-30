@@ -12,12 +12,12 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 NAMESPACE="${NAMESPACE:-docs-agent}"
 FORCE="${FORCE_KSERVE_DEPLOY:-false}"
 
-SR="${ROOT_DIR}/manifests/serving-runtime.yaml"
-ISVC="${ROOT_DIR}/manifests/inference-service.yaml"
-QWEN_SVC="${ROOT_DIR}/manifests/qwen-llm-service.yaml"
+SR="${ROOT_DIR}/legacy/manifests/serving-runtime.yaml"
+ISVC="${ROOT_DIR}/legacy/manifests/inference-service.yaml"
+QWEN_SVC="${ROOT_DIR}/legacy/manifests/qwen-llm-service.yaml"
 
 if [[ ! -f "$SR" || ! -f "$ISVC" ]]; then
-  echo "ERROR: missing KServe manifests under manifests/"
+  echo "ERROR: missing KServe manifests under legacy/manifests/"
   exit 1
 fi
 

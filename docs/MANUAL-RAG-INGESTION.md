@@ -8,9 +8,9 @@ to add or refresh indexed content.
 
 | Milvus collection | Pipeline | MCP tool |
 |-------------------|----------|----------|
-| `kubeflow_docs_docs_rag` | `pipelines/kubeflow-pipeline.py` | `search_kubeflow_docs` |
-| `issues_rag` | `pipelines/issues-pipeline.py` | `search_github_issues` |
-| `code_rag` | `pipelines/code-pipeline.py` | `search_kubeflow_code` |
+| `kubeflow_docs_docs_rag` | `docs-agent-mcp/pipelines/kubeflow-pipeline.py` | `search_kubeflow_docs` |
+| `issues_rag` | `docs-agent-mcp/pipelines/issues-pipeline.py` | `search_github_issues` |
+| `code_rag` | `docs-agent-mcp/pipelines/code-pipeline.py` | `search_kubeflow_code` |
 
 Milvus host (in-cluster): `my-release-milvus.docs-agent.svc.cluster.local:19530`
 
@@ -28,7 +28,7 @@ run. Existing chunks for files you do not re-ingest are left untouched.
 
 ```bash
 pip install kfp kfp-kubernetes
-pip install -r pipelines/requirements.txt
+pip install -r docs-agent-mcp/pipelines/requirements.txt
 ```
 
 ---
@@ -38,7 +38,7 @@ pip install -r pipelines/requirements.txt
 From the repo root:
 
 ```bash
-cd pipelines
+cd docs-agent-mcp/pipelines
 python kubeflow-pipeline.py          # → github_rag_pipeline.yaml
 python issues-pipeline.py            # → github_issues_rag_pipeline.yaml
 python code-pipeline.py              # → code_rag_pipeline.yaml
@@ -87,7 +87,7 @@ Port-forwarding only the pipeline UI often leaves namespace empty and causes:
    ```
    Common names: `user`, `amlc-bruce`, `amlc-carl`. Pipeline pods and secrets run in **that** namespace.
 
-4. **Pipelines** → **Upload pipeline** → select compiled YAML from `pipelines/`.
+4. **Pipelines** → **Upload pipeline** → select compiled YAML from `docs-agent-mcp/pipelines/`.
 
 5. **Create run** → ensure the UI shows your namespace (top bar / experiment), not blank.
 
@@ -119,9 +119,9 @@ client = kfp.Client(host="http://localhost:8888", namespace=NAMESPACE)
 client.create_experiment(name="rag-ingestion", namespace=NAMESPACE)
 
 for name, path in [
-    ("docs", "pipelines/github_rag_pipeline.yaml"),
-    ("issues", "pipelines/github_issues_rag_pipeline.yaml"),
-    ("code", "pipelines/code_rag_pipeline.yaml"),
+    ("docs", "docs-agent-mcp/pipelines/github_rag_pipeline.yaml"),
+    ("issues", "docs-agent-mcp/pipelines/github_issues_rag_pipeline.yaml"),
+    ("code", "docs-agent-mcp/pipelines/code_rag_pipeline.yaml"),
 ]:
     result = client.create_run_from_pipeline_package(
         pipeline_file=path,

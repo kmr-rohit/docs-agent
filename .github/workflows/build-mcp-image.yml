@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - "kagent-feast-mcp/mcp-server/**"
+      - "docs-agent-mcp/mcp-server/**"
   workflow_dispatch:
 
 env:
@@ -47,8 +47,8 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          context: ./kagent-feast-mcp/mcp-server
-          file: ./kagent-feast-mcp/mcp-server/Dockerfile
+          context: ./docs-agent-mcp/mcp-server
+          file: ./docs-agent-mcp/mcp-server/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}

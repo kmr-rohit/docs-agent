@@ -7,10 +7,10 @@
 This repo's validation target is the **Kagent MCP deployment path**, not local FastAPI/WebSocket server startup. The important runtime path is:
 
 ```
-User / Kagent UI → Kagent Agent CRD → MCP server (kagent-feast-mcp/mcp-server/) → Milvus collections → LLM backend (Groq / KServe)
+User / Kagent UI → Kagent Agent CRD → MCP server (docs-agent-mcp/mcp-server/) → Milvus collections → LLM backend (Groq / KServe)
 ```
 
-The MCP server at `kagent-feast-mcp/mcp-server/server.py` is the main thing to validate. The legacy servers at `server/` and `server-https/` only need basic syntax/import sanity checks.
+The MCP server at `docs-agent-mcp/mcp-server/server.py` is the main thing to validate. The legacy servers under `legacy/server/` and `legacy/server-https/` only need basic syntax/import sanity checks.
 
 ### MCP server overview
 
@@ -20,16 +20,16 @@ The MCP server at `kagent-feast-mcp/mcp-server/server.py` is the main thing to v
 | `search_github_issues` | `issues_rag` | Populated and loaded |
 | `search_kubeflow_code` | `code_rag` | Collection may exist with **0** entities until the code ingestion pipeline is rerun |
 
-The server uses FastMCP with `streamable-http` transport on port 8000. The MCP endpoint is at `/mcp`. The checked-in `kagent-feast-mcp/mcp-server/server.py` may lag the cluster image (for example, additional tools); validate with `tools/list` against the live deployment.
+The server uses FastMCP with `streamable-http` transport on port 8000. The MCP endpoint is at `/mcp`. The checked-in `docs-agent-mcp/mcp-server/server.py` may lag the cluster image (for example, additional tools); validate with `tools/list` against the live deployment.
 
 ### Code change → validation loop
 
 When code changes are made to the MCP server:
 
-1. **Build the Docker image** (context is `kagent-feast-mcp/`, Dockerfile at `kagent-feast-mcp/mcp-server/Dockerfile`):
+1. **Build the Docker image** (context is `docs-agent-mcp/`, Dockerfile at `docs-agent-mcp/mcp-server/Dockerfile`):
    ```bash
    docker build -t ghcr.io/kmr-rohit/mcp-kubeflow-docs:<tag> \
-     -f kagent-feast-mcp/mcp-server/Dockerfile kagent-feast-mcp/
+     -f docs-agent-mcp/mcp-server/Dockerfile docs-agent-mcp/
    ```
 2. **Push to GHCR**:
    ```bash
@@ -44,9 +44,9 @@ When code changes are made to the MCP server:
    ```
 4. **Validate MCP tools** against live Milvus-backed cluster service.
 
-**Kagent CRDs vs the container image:** `RemoteMCPServer` and `Agent` in `kagent-feast-mcp/manifests/kagent/setup.yaml` point at the **Kubernetes Service URL** (for example `http://mcp-kubeflow-docs.docs-agent.svc.cluster.local:8000/mcp`). When you only change MCP server code, you update the **`Deployment` image** (`mcp-kubeflow-docs`); you do **not** need to edit those CRDs unless you rename the Service, change the port, or change the path. If you reuse a fixed tag like `latest` and push a new digest, ensure `imagePullPolicy: Always` or bump the tag so nodes pull the new image.
+**Kagent CRDs vs the container image:** `RemoteMCPServer` and `Agent` in `docs-agent-mcp/manifests/kagent/setup.yaml` point at the **Kubernetes Service URL** (for example `http://mcp-kubeflow-docs.docs-agent.svc.cluster.local:8000/mcp`). When you only change MCP server code, you update the **`Deployment` image** (`mcp-kubeflow-docs`); you do **not** need to edit those CRDs unless you rename the Service, change the port, or change the path. If you reuse a fixed tag like `latest` and push a new digest, ensure `imagePullPolicy: Always` or bump the tag so nodes pull the new image.
 
-The CI workflow at `.github/workflows/build-mcp-image.yml` automatically builds and pushes to GHCR on pushes to `main` that touch `kagent-feast-mcp/mcp-server/**`.
+The CI workflow at `.github/workflows/build-mcp-image.yml` automatically builds and pushes to GHCR on pushes to `main` that touch `docs-agent-mcp/mcp-server/**`.
 
 ### Cursor Cloud secrets: autonomous `docker push` + OKE validation
 
@@ -78,7 +78,7 @@ echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
 | `FEAST_API_KEY` or `FEAST_AUTH_TOKEN` | If Feast Server or a proxy requires auth |
 | `FEAST_TLS_CA_B64` | PEM of CA for TLS verify, if not using public CAs |
 
-Exact names should follow the env vars you implement in `kagent-feast-mcp/mcp-server/`. Today’s MCP image talks to **Milvus over HTTP** (`MILVUS_URI`); a Feast-gRPC path is a **code + deploy env** change, not something the registry secrets replace.
+Exact names should follow the env vars you implement in `docs-agent-mcp/mcp-server/`. Today’s MCP image talks to **Milvus over HTTP** (`MILVUS_URI`); a Feast-gRPC path is a **code + deploy env** change, not something the registry secrets replace.
 
 ### Local Docker validation (without cluster)
 
@@ -87,7 +87,7 @@ You can build and run the MCP container locally to verify the image builds and t
 ```bash
 # Ensure dockerd is running (see "Starting Docker" below)
 docker build -t mcp-kubeflow-docs:local-test \
-  -f kagent-feast-mcp/mcp-server/Dockerfile kagent-feast-mcp/
+  -f docs-agent-mcp/mcp-server/Dockerfile docs-agent-mcp/
 docker run -d --name mcp-test -p 8003:8000 mcp-kubeflow-docs:local-test
 
 # Test MCP initialize
@@ -246,7 +246,7 @@ Use `Accept: application/json, text/event-stream`, read `mcp-session-id` / `Mcp-
 All components share a virtualenv at `/workspace/.venv`. Activate with `source /workspace/.venv/bin/activate`. Dependencies are installed from:
 - `server/requirements.txt`
 - `server-https/requirements.txt`
-- `kagent-feast-mcp/mcp-server/requirements.txt`
+- `docs-agent-mcp/mcp-server/requirements.txt`
 
 ### Environment variables (MCP server)
 
@@ -264,5 +264,6 @@ All components share a virtualenv at `/workspace/.venv`. Activate with `source /
 - **No automated test suite** exists in this repo. Validation is done by building Docker images, deploying, and testing MCP tool calls.
 - **No linter configuration** is present. Use `python -m py_compile <file>` for syntax checks.
 - The `sentence-transformers` embedding model (~400 MB) is baked into the Docker image at build time. First local import also downloads it to `~/.cache/huggingface/`.
-- The `pipelines/` directory contains Kubeflow Pipeline definitions designed for K8s clusters, not local execution.
+- The `docs-agent-mcp/pipelines/` directory contains Kubeflow Pipeline definitions designed for K8s clusters, not local execution.
+- Platform infrastructure is defined under `docs-agent-mcp/terraform/` (Knative, KServe, Milvus operator, KFP standalone, kagent, Istio policies).
 - The `oci-cli` Python package is installed in the venv for kubectl exec credential plugin. If you see `oci` import errors, ensure the venv is activated or `oci` is on PATH.

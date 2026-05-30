@@ -19,6 +19,15 @@ The official LLM implementation of the Kubeflow Documentation Assistant powered 
 - [Troubleshooting](#troubleshooting)
 - [Contributing](#contributing)
 
+## Repository layout
+
+| Path | Purpose |
+|------|---------|
+| `docs-agent-mcp/` | MCP server, Kagent manifests, RAG pipelines, and Terraform platform stack |
+| `legacy/` | Historical FastAPI servers, older manifests, and Feast-era pipeline copies |
+| `frontend/` | Docs site chatbot assets (`docs_scripts/`, `docs_styles/`) |
+| `.github/workflows/` | CI/CD (`oke-cicd.yaml` builds MCP, runs tests, deploys to OKE) |
+
 ## Overview
 
 ### Why This Project Exists
@@ -413,7 +422,7 @@ data: {"type": "done"}
 
 2. **Run the Pipeline**:
    ```bash
-   python pipelines/kubeflow-pipeline.py
+   python docs-agent-mcp/pipelines/kubeflow-pipeline.py
    ```
 
 3. **Start the API Server**:

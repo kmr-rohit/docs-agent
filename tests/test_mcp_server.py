@@ -1,4 +1,4 @@
-"""Tests for the MCP server (kagent-feast-mcp/mcp-server/server.py).
+"""Tests for the MCP server (docs-agent-mcp/mcp-server/server.py).
 
 Mocking strategy: We pre-populate sys.modules with mock versions of
 sentence_transformers and pymilvus BEFORE importing server.py. This avoids
@@ -15,7 +15,7 @@ from unittest.mock import MagicMock
 import numpy as np
 import pytest
 
-MCP_SERVER_DIR = Path(__file__).parent.parent / "kagent-feast-mcp" / "mcp-server"
+MCP_SERVER_DIR = Path(__file__).parent.parent / "docs-agent-mcp" / "mcp-server"
 MCP_SERVER_PATH = MCP_SERVER_DIR / "server.py"
 
 # Pre-mock heavy dependencies before importing server.
