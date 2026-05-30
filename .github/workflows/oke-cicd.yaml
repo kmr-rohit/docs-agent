@@ -34,22 +34,22 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r kagent-feast-mcp/mcp-server/requirements.txt
+          pip install -r docs-agent-mcp/mcp-server/requirements.txt
           pip install -r requirements-test.txt
           pip install ruff kfp kfp-kubernetes
 
       - name: Compile docs RAG pipeline
-        working-directory: pipelines
+        working-directory: docs-agent-mcp/pipelines
         run: |
           python kubeflow-pipeline.py
           python issues-pipeline.py
           python code-pipeline.py
 
       - name: Ruff lint
-        run: ruff check kagent-feast-mcp/mcp-server tests pipelines
+        run: ruff check docs-agent-mcp/mcp-server tests docs-agent-mcp/pipelines
 
       - name: Compile MCP server
-        run: python -m py_compile kagent-feast-mcp/mcp-server/*.py
+        run: python -m py_compile docs-agent-mcp/mcp-server/*.py
 
       - name: Run Unit Tests
         run: pytest -v --tb=short
@@ -122,8 +122,8 @@ jobs:
       - name: Build and Push MCP Image
         uses: docker/build-push-action@v5
         with:
-          context: ./kagent-feast-mcp/mcp-server
-          file: ./kagent-feast-mcp/mcp-server/Dockerfile
+          context: ./docs-agent-mcp/mcp-server
+          file: ./docs-agent-mcp/mcp-server/Dockerfile
           push: true
           tags: |
             ${{ env.IMAGE_REPO }}:${{ env.tag }}
@@ -152,7 +152,7 @@ jobs:
             --docker-email="${GHCR_USERNAME}@users.noreply.github.com" \
             --dry-run=client -o yaml | kubectl apply -f -
 
-          kubectl apply -f kagent-feast-mcp/manifests/mcp-server/mcp-server.yaml
+          kubectl apply -f docs-agent-mcp/manifests/mcp-server/mcp-server.yaml
           kubectl set image deployment/mcp-kubeflow-docs \
             mcp-server="${FULL_IMAGE}" \
             -n "${{ env.K8S_NAMESPACE }}" || true
@@ -161,15 +161,17 @@ jobs:
           kubectl rollout status deployment/mcp-kubeflow-docs \
             -n "${{ env.K8S_NAMESPACE }}" --timeout=600s
 
-          kubectl apply -f manifests/qwen-llm-service.yaml
-          kubectl apply -f kagent-feast-mcp/manifests/kagent/setup.yaml
+          kubectl apply -f legacy/manifests/qwen-llm-service.yaml
+          kubectl apply -f docs-agent-mcp/manifests/kagent/setup.yaml
 
           DEPLOY_KSERVE=false
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.deploy_kserve }}" = "true" ]; then
             DEPLOY_KSERVE=true
           elif [ "${{ github.event_name }}" = "push" ]; then
-            if git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" \
-              | grep -qE 'manifests/(inference-service|serving-runtime)\.yaml'; then
+            # Only content edits (M), not renames/moves (R) or new paths (A) — avoids
+            # accidental GPU recycle when manifests are relocated (e.g. manifests/ → legacy/manifests/).
+            if git diff --name-only --diff-filter=M "${{ github.event.before }}" "${{ github.sha }}" \
+              | grep -qE '^(legacy/manifests|manifests)/(inference-service|serving-runtime)\.yaml$'; then
               DEPLOY_KSERVE=true
             fi
           fi

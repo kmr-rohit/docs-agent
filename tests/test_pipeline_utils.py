@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 # Add pipelines directory to path
-PIPELINES_DIR = Path(__file__).parent.parent / "pipelines"
+PIPELINES_DIR = Path(__file__).parent.parent / "docs-agent-mcp" / "pipelines"
 sys.path.insert(0, str(PIPELINES_DIR))
 
 from utils import clean_content, resolve_github_token

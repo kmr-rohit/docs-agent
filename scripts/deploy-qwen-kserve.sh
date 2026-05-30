@@ -15,7 +15,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 NAMESPACE="${NAMESPACE:-docs-agent}"
 
 echo "==> Ensuring GPU node root volume is expanded (250GB boot volume -> ~239GB root FS)"
-kubectl apply -f "${ROOT_DIR}/manifests/gpu-node-lvm-expand-job.yaml"
+kubectl apply -f "${ROOT_DIR}/legacy/manifests/gpu-node-lvm-expand-job.yaml"
 if kubectl wait --for=condition=complete "job/gpu-node-lvm-expand" -n kube-system --timeout=180s 2>/dev/null; then
   kubectl logs -n kube-system "job/gpu-node-lvm-expand" || true
 else
