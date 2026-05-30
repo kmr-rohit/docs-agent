@@ -30,11 +30,12 @@ if ! kubectl get inferenceservice qwen -n "$NAMESPACE" &>/dev/null; then
 fi
 
 if [[ "$FORCE" != "true" ]]; then
+  # kubectl diff compares desired YAML to cluster state (ignores repo path moves).
   if kubectl diff -f "$SR" -f "$ISVC" -n "$NAMESPACE" >/dev/null 2>&1; then
-    echo "==> KServe manifests unchanged — skipping GPU inference deploy"
+    echo "==> KServe manifests unchanged on cluster — skipping GPU inference deploy"
     exit 0
   fi
-  echo "==> KServe manifest diff detected — recycling GPU revision"
+  echo "==> KServe cluster diff detected — recycling GPU revision"
 fi
 
 recycle_gpu_predictor() {

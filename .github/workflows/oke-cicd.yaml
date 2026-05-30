@@ -168,8 +168,10 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.deploy_kserve }}" = "true" ]; then
             DEPLOY_KSERVE=true
           elif [ "${{ github.event_name }}" = "push" ]; then
-            if git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" \
-              | grep -qE 'legacy/manifests/(inference-service|serving-runtime)\.yaml'; then
+            # Only content edits (M), not renames/moves (R) or new paths (A) — avoids
+            # accidental GPU recycle when manifests are relocated (e.g. manifests/ → legacy/manifests/).
+            if git diff --name-only --diff-filter=M "${{ github.event.before }}" "${{ github.sha }}" \
+              | grep -qE '^(legacy/manifests|manifests)/(inference-service|serving-runtime)\.yaml$'; then
               DEPLOY_KSERVE=true
             fi
           fi
