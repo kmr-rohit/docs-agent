@@ -204,7 +204,7 @@ kubectl run milvus-check --restart=Never -n docs-agent \
 from pymilvus import connections, utility, Collection
 connections.connect(
     \"default\",
-    host=\"my-release-milvus.docs-agent.svc.cluster.local\",
+    host=\"milvus-milvus.ml-infra.svc.cluster.local\",
     port=\"19530\",
     user=\"root\",
     password=\"Milvus\",
@@ -252,11 +252,11 @@ All components share a virtualenv at `/workspace/.venv`. Activate with `source /
 
 | Variable | Default | Description |
 |---|---|---|
-| `MILVUS_URI` | `http://localhost:19530` | Milvus connection URI |
+| `MILVUS_URI` | `http://milvus-milvus.ml-infra.svc.cluster.local:19530` | Milvus connection URI |
 | `MILVUS_USER` | `root` | Milvus username |
-| `MILVUS_PASSWORD` | `Milvus` | Milvus password |
+| `MILVUS_PASSWORD` | *(required, from secret)* | Milvus password — never in ConfigMap |
+| `EMBEDDINGS_URL` | `http://embeddings-service-predictor.ml-infra.svc.cluster.local/embed` | TEI embeddings service |
 | `COLLECTION_NAME` | `kubeflow_docs_docs_rag` | Milvus collection name |
-| `EMBEDDING_MODEL` | `sentence-transformers/all-mpnet-base-v2` | Sentence-transformer model |
 | `PORT` | `8000` | Server listen port |
 
 ### Important caveats
