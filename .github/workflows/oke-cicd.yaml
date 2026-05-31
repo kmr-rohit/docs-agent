@@ -201,19 +201,65 @@ jobs:
           kubectl rollout status deployment/mcp-kubeflow-docs \
             -n "${{ env.K8S_NAMESPACE }}" --timeout=120s
           kubectl exec -n "${{ env.K8S_NAMESPACE }}" deploy/mcp-kubeflow-docs -- python3 -c "
-          import urllib.request
-          urllib.request.urlopen('http://127.0.0.1:8000/mcp', timeout=5)
-          print('mcp server listening')
-          "
-          kubectl exec -n "${{ env.K8S_NAMESPACE }}" deploy/mcp-kubeflow-docs -- python3 -c "
-          import os, requests
-          url = os.environ['EMBEDDINGS_URL']
-          r = requests.post(url, json={'inputs': ['kubeflow pipelines smoke test']}, timeout=120)
-          r.raise_for_status()
-          vecs = r.json()
-          assert isinstance(vecs, list) and len(vecs) == 1
-          assert len(vecs[0]) == 768, f'unexpected dim {len(vecs[0])}'
-          print('embeddings smoke ok', url, 'dim', len(vecs[0]))
+          import os
+          import requests
+
+          MCP_URL = 'http://127.0.0.1:8000/mcp'
+          MCP_HEADERS = {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json, text/event-stream',
+          }
+
+          init = requests.post(
+              MCP_URL,
+              json={
+                  'jsonrpc': '2.0',
+                  'id': 1,
+                  'method': 'initialize',
+                  'params': {
+                      'protocolVersion': '2025-03-26',
+                      'capabilities': {},
+                      'clientInfo': {'name': 'oke-cicd-smoke', 'version': '1.0'},
+                  },
+              },
+              headers=MCP_HEADERS,
+              timeout=30,
+          )
+          init.raise_for_status()
+          session = init.headers.get('mcp-session-id') or init.headers.get('Mcp-Session-Id')
+          if not session:
+              raise RuntimeError('MCP initialize succeeded but no mcp-session-id header')
+          session_headers = {**MCP_HEADERS, 'Mcp-Session-Id': session}
+          requests.post(
+              MCP_URL,
+              json={'jsonrpc': '2.0', 'method': 'notifications/initialized', 'params': {}},
+              headers=session_headers,
+              timeout=30,
+          ).raise_for_status()
+          tools = requests.post(
+              MCP_URL,
+              json={'jsonrpc': '2.0', 'id': 2, 'method': 'tools/list', 'params': {}},
+              headers=session_headers,
+              timeout=30,
+          )
+          tools.raise_for_status()
+          body = tools.text
+          for name in ('search_kubeflow_docs', 'search_github_issues', 'search_kubeflow_code'):
+              if name not in body:
+                  raise RuntimeError(f'MCP tools/list missing {name}')
+          print('mcp smoke ok (initialize + tools/list)')
+
+          emb_url = os.environ['EMBEDDINGS_URL']
+          emb = requests.post(
+              emb_url,
+              json={'inputs': ['kubeflow pipelines smoke test']},
+              timeout=120,
+          )
+          emb.raise_for_status()
+          vecs = emb.json()
+          if not isinstance(vecs, list) or len(vecs) != 1 or len(vecs[0]) != 768:
+              raise RuntimeError('unexpected embeddings response: ' + repr(vecs)[:200])
+          print('embeddings smoke ok', emb_url, 'dim', len(vecs[0]))
           "
           kubectl get agent,modelconfig -n "${{ env.K8S_NAMESPACE }}"
 
