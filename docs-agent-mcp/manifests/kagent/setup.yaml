@@ -22,9 +22,9 @@ spec:
   provider: OpenAI
   apiKeySecret: kagent-kserve
   apiKeySecretKey: OPENAI_API_KEY
-  model: qwen2.5-3b-instruct
+  model: qwen2.5-14B
   openAI:
-    baseUrl: "http://qwen-llm.docs-agent.svc.cluster.local/openai/v1"
+    baseUrl: "http://qwen-llm-stable.ml-infra.svc.cluster.local/openai/v1"
 
 ---
 apiVersion: kagent.dev/v1alpha2
@@ -47,6 +47,7 @@ spec:
   type: Declarative
   declarative:
     modelConfig: kserve-qwen
+    stream: true
     tools:
       - type: McpServer
         mcpServer:

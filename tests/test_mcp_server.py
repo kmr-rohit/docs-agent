@@ -1,31 +1,21 @@
 """Tests for the MCP server (docs-agent-mcp/mcp-server/server.py).
 
-Mocking strategy: We pre-populate sys.modules with mock versions of
-sentence_transformers and pymilvus BEFORE importing server.py. This avoids
-loading the real heavy libraries (which take 30s+ and need GPU/model downloads).
-The mocks persist for the lifetime of the test process — this is intentional
-since only the server module references them.
+Mocks pymilvus and embeddings HTTP calls — no in-process sentence-transformers.
 """
 
 import sys
 import importlib.util
 from pathlib import Path
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
-import numpy as np
 import pytest
 
 MCP_SERVER_DIR = Path(__file__).parent.parent / "docs-agent-mcp" / "mcp-server"
 MCP_SERVER_PATH = MCP_SERVER_DIR / "server.py"
 
-# Pre-mock heavy dependencies before importing server.
-# server.py does `from pymilvus import MilvusClient` and
-# `from sentence_transformers import SentenceTransformer` at import time.
-# These mocks are never cleaned up — server retains the mock bindings
-# for the test process lifetime, which is exactly what we want.
-sys.modules.setdefault("sentence_transformers", MagicMock())
 sys.modules.setdefault("pymilvus", MagicMock())
 
+sys.path.insert(0, str(MCP_SERVER_DIR))
 spec = importlib.util.spec_from_file_location("docs_agent_mcp_server", MCP_SERVER_PATH)
 server = importlib.util.module_from_spec(spec)
 sys.modules["docs_agent_mcp_server"] = server
@@ -35,81 +25,56 @@ spec.loader.exec_module(server)
 @pytest.fixture(autouse=True)
 def reset_server_globals():
     """Reset server globals before each test so state doesn't leak."""
-    original_model = server.model
     original_client = server.client
-    original_st = server.SentenceTransformer
-    original_mc = server.MilvusClient
+    original_password = server.MILVUS_PASSWORD
+    server.MILVUS_PASSWORD = "test-password"
     yield
-    server.model = original_model
     server.client = original_client
-    server.SentenceTransformer = original_st
-    server.MilvusClient = original_mc
+    server.MILVUS_PASSWORD = original_password
 
 
 @pytest.fixture
-def inject_mocks(mock_milvus_client, mock_sentence_transformer):
-    """Inject mock model and client into the server module."""
-    server.model = mock_sentence_transformer
+def inject_mocks(mock_milvus_client):
+    """Inject mock Milvus client and fixed query embedding."""
     server.client = mock_milvus_client
-    return mock_milvus_client, mock_sentence_transformer
+    fake_vector = [0.0] * 768
+    with patch.object(server, "embed_query", return_value=fake_vector) as embed_mock:
+        yield mock_milvus_client, embed_mock
 
 
 class TestInit:
     """Tests for the _init() lazy initialization function."""
 
-    def test_init_creates_model_and_client_when_none(self):
-        """_init() should create model and client when they are None."""
-        server.model = None
+    def test_init_requires_milvus_password(self):
         server.client = None
+        server.MILVUS_PASSWORD = ""
+        with pytest.raises(RuntimeError, match="MILVUS_PASSWORD"):
+            server._init()
 
-        mock_st_class = MagicMock(return_value=MagicMock())
+    def test_init_creates_client_when_none(self):
+        server.client = None
+        server.MILVUS_PASSWORD = "secret"
         mock_mc_class = MagicMock(return_value=MagicMock())
-        server.SentenceTransformer = mock_st_class
         server.MilvusClient = mock_mc_class
 
         server._init()
 
-        mock_st_class.assert_called_once_with(server.EMBEDDING_MODEL)
         mock_mc_class.assert_called_once_with(
             uri=server.MILVUS_URI,
             user=server.MILVUS_USER,
-            password=server.MILVUS_PASSWORD,
+            password="secret",
         )
 
     def test_init_is_idempotent(self):
-        """Calling _init() twice should not create duplicate clients."""
-        server.model = None
         server.client = None
-
-        mock_st_class = MagicMock(return_value=MagicMock())
+        server.MILVUS_PASSWORD = "secret"
         mock_mc_class = MagicMock(return_value=MagicMock())
-        server.SentenceTransformer = mock_st_class
         server.MilvusClient = mock_mc_class
 
         server._init()
         server._init()
 
-        mock_st_class.assert_called_once()
         mock_mc_class.assert_called_once()
-
-    def test_init_skips_if_already_initialized(self):
-        """_init() should not overwrite existing model/client."""
-        existing_model = MagicMock()
-        existing_client = MagicMock()
-        server.model = existing_model
-        server.client = existing_client
-
-        mock_st_class = MagicMock()
-        mock_mc_class = MagicMock()
-        server.SentenceTransformer = mock_st_class
-        server.MilvusClient = mock_mc_class
-
-        server._init()
-
-        assert server.model is existing_model
-        assert server.client is existing_client
-        mock_st_class.assert_not_called()
-        mock_mc_class.assert_not_called()
 
 
 class TestSearchKubeflowDocs:
@@ -155,29 +120,24 @@ class TestSearchKubeflowDocs:
 
         assert mock_client.search.call_args.kwargs["limit"] == 3
 
-    def test_encodes_query_with_model(self, inject_mocks):
-        """Should encode the query string using the sentence transformer."""
-        mock_client, mock_model = inject_mocks
+    def test_calls_embeddings_service_for_query(self, inject_mocks):
+        mock_client, embed_mock = inject_mocks
         mock_client.search.return_value = [[]]
 
         server.search_kubeflow_docs("KServe setup guide")
 
-        mock_model.encode.assert_called_once_with("KServe setup guide")
+        embed_mock.assert_called_once()
+        assert embed_mock.call_args[0][0] == "KServe setup guide"
 
-    def test_passes_embedding_to_milvus_as_list(self, inject_mocks):
-        """Should pass the encoded embedding as a plain list to Milvus search."""
-        mock_client, mock_model = inject_mocks
-        fake_embedding = np.ones(768, dtype=np.float32)
-        mock_model.encode.return_value = fake_embedding
+    def test_passes_embedding_to_milvus(self, inject_mocks):
+        mock_client, embed_mock = inject_mocks
         mock_client.search.return_value = [[]]
 
         server.search_kubeflow_docs("test")
 
         data = mock_client.search.call_args.kwargs["data"]
-        assert len(data) == 1  # single query vector
-        assert isinstance(data[0], list), "embedding must be a plain list"
+        assert len(data) == 1
         assert len(data[0]) == 768
-        assert data[0][0] == 1.0  # from np.ones
 
     def test_requests_correct_output_fields(self, inject_mocks):
         """Should request content_text, citation_url, and file_path from Milvus."""

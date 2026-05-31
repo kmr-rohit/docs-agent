@@ -30,18 +30,54 @@ resource "helm_release" "kagent" {
   create_namespace = false
 
   # Disable all pre-bundled agents — we bring our own via setup.yaml
-  set { name = "agents.argo-rollouts-agent.enabled";  value = "false" }
-  set { name = "agents.cilium-debug-agent.enabled";   value = "false" }
-  set { name = "agents.cilium-manager-agent.enabled"; value = "false" }
-  set { name = "agents.cilium-policy-agent.enabled";  value = "false" }
-  set { name = "agents.helm-agent.enabled";           value = "false" }
-  set { name = "agents.istio-agent.enabled";          value = "false" }
-  set { name = "agents.k8s-agent.enabled";            value = "false" }
-  set { name = "agents.kgateway-agent.enabled";       value = "false" }
-  set { name = "agents.observability-agent.enabled";  value = "false" }
-  set { name = "agents.promql-agent.enabled";         value = "false" }
-  set { name = "tools.grafana-mcp.enabled";           value = "false" }
-  set { name = "tools.querydoc.enabled";              value = "false" }
+  set {
+    name  = "agents.argo-rollouts-agent.enabled"
+    value = "false"
+  }
+  set {
+    name  = "agents.cilium-debug-agent.enabled"
+    value = "false"
+  }
+  set {
+    name  = "agents.cilium-manager-agent.enabled"
+    value = "false"
+  }
+  set {
+    name  = "agents.cilium-policy-agent.enabled"
+    value = "false"
+  }
+  set {
+    name  = "agents.helm-agent.enabled"
+    value = "false"
+  }
+  set {
+    name  = "agents.istio-agent.enabled"
+    value = "false"
+  }
+  set {
+    name  = "agents.k8s-agent.enabled"
+    value = "false"
+  }
+  set {
+    name  = "agents.kgateway-agent.enabled"
+    value = "false"
+  }
+  set {
+    name  = "agents.observability-agent.enabled"
+    value = "false"
+  }
+  set {
+    name  = "agents.promql-agent.enabled"
+    value = "false"
+  }
+  set {
+    name  = "tools.grafana-mcp.enabled"
+    value = "false"
+  }
+  set {
+    name  = "tools.querydoc.enabled"
+    value = "false"
+  }
 
   depends_on = [helm_release.kagent_crds]
 }

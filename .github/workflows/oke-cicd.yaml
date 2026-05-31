@@ -152,7 +152,9 @@ jobs:
             --docker-email="${GHCR_USERNAME}@users.noreply.github.com" \
             --dry-run=client -o yaml | kubectl apply -f -
 
-          kubectl apply -f docs-agent-mcp/manifests/mcp-server/mcp-server.yaml
+          # Manifest template uses OWNER; deploy always sets the real GHCR image below.
+          sed "s|ghcr.io/OWNER/mcp-kubeflow-docs:latest|${FULL_IMAGE}|g" \
+            docs-agent-mcp/manifests/mcp-server/mcp-server.yaml | kubectl apply -f -
           kubectl set image deployment/mcp-kubeflow-docs \
             mcp-server="${FULL_IMAGE}" \
             -n "${{ env.K8S_NAMESPACE }}" || true
@@ -161,32 +163,39 @@ jobs:
           kubectl rollout status deployment/mcp-kubeflow-docs \
             -n "${{ env.K8S_NAMESPACE }}" --timeout=600s
 
-          kubectl apply -f legacy/manifests/qwen-llm-service.yaml
           kubectl apply -f docs-agent-mcp/manifests/kagent/setup.yaml
 
           DEPLOY_KSERVE=false
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.deploy_kserve }}" = "true" ]; then
             DEPLOY_KSERVE=true
           elif [ "${{ github.event_name }}" = "push" ]; then
-            # Only content edits (M), not renames/moves (R) or new paths (A) — avoids
-            # accidental GPU recycle when manifests are relocated (e.g. manifests/ → legacy/manifests/).
             if git diff --name-only --diff-filter=M "${{ github.event.before }}" "${{ github.sha }}" \
-              | grep -qE '^(legacy/manifests|manifests)/(inference-service|serving-runtime)\.yaml$'; then
+              | grep -qE '^docs-agent-mcp/manifests/vllm/kserve-qwen\.yaml$'; then
               DEPLOY_KSERVE=true
             fi
           fi
 
           if [ "${DEPLOY_KSERVE}" = "true" ]; then
-            echo "KServe manifest change or manual flag — deploying GPU inference"
-            chmod +x scripts/deploy-kserve-if-changed.sh
-            FORCE_KSERVE_DEPLOY=true scripts/deploy-kserve-if-changed.sh
+            echo "Removing legacy docs-agent GPU InferenceService (frees GPU for ml-infra/qwen-llm)"
+            kubectl delete inferenceservice/qwen -n "${{ env.K8S_NAMESPACE }}" --ignore-not-found=true
+            kubectl delete svc/qwen-llm -n "${{ env.K8S_NAMESPACE }}" --ignore-not-found=true
+            echo "Applying ml-infra Qwen KServe manifests"
+            kubectl apply -f docs-agent-mcp/manifests/vllm/kserve-qwen.yaml
+            kubectl rollout status deployment -n ml-infra -l serving.kserve.io/inferenceservice=qwen-llm --timeout=600s 2>/dev/null || true
           else
-            echo "Skipping KServe GPU deploy (no manifest change)"
-            chmod +x scripts/deploy-kserve-if-changed.sh
-            FORCE_KSERVE_DEPLOY=false scripts/deploy-kserve-if-changed.sh
+            echo "Skipping Qwen GPU deploy (no vllm manifest change; use workflow_dispatch to force)"
           fi
 
-      - name: Smoke test MCP
+      - name: Wait for ml-infra dependencies
+        run: |
+          set -euo pipefail
+          kubectl wait --for=condition=Ready inferenceservice/embeddings-service \
+            -n ml-infra --timeout=600s
+          kubectl wait --for=condition=Ready milvus/milvus \
+            -n ml-infra --timeout=600s 2>/dev/null || \
+            kubectl get milvus -n ml-infra
+
+      - name: Smoke test MCP and embeddings (ml-infra)
         run: |
           set -euo pipefail
           kubectl rollout status deployment/mcp-kubeflow-docs \
@@ -196,22 +205,32 @@ jobs:
           urllib.request.urlopen('http://127.0.0.1:8000/mcp', timeout=5)
           print('mcp server listening')
           "
+          kubectl exec -n "${{ env.K8S_NAMESPACE }}" deploy/mcp-kubeflow-docs -- python3 -c "
+          import os, requests
+          url = os.environ['EMBEDDINGS_URL']
+          r = requests.post(url, json={'inputs': ['kubeflow pipelines smoke test']}, timeout=120)
+          r.raise_for_status()
+          vecs = r.json()
+          assert isinstance(vecs, list) and len(vecs) == 1
+          assert len(vecs[0]) == 768, f'unexpected dim {len(vecs[0])}'
+          print('embeddings smoke ok', url, 'dim', len(vecs[0]))
+          "
           kubectl get agent,modelconfig -n "${{ env.K8S_NAMESPACE }}"
 
       - name: Smoke test Qwen (non-blocking)
         continue-on-error: true
         run: |
           set -euo pipefail
-          POD="$(kubectl get pods -n "${{ env.K8S_NAMESPACE }}" -l serving.kserve.io/inferenceservice=qwen \
+          POD="$(kubectl get pods -n ml-infra -l serving.kserve.io/inferenceservice=qwen-llm \
             --field-selector=status.phase=Running \
             -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)"
           if [ -z "${POD}" ]; then
-            echo "No running qwen pod — skipping LLM smoke test"
+            echo "No running qwen-llm pod in ml-infra — skipping LLM smoke test"
             exit 0
           fi
-          kubectl exec -n "${{ env.K8S_NAMESPACE }}" "${POD}" -c kserve-container -- python3 -c "
+          kubectl exec -n ml-infra "${POD}" -c kserve-container -- python3 -c "
           import urllib.request, json
-          p=json.dumps({'model':'qwen2.5-3b-instruct','messages':[{'role':'user','content':'ping'}],'max_tokens':8}).encode()
+          p=json.dumps({'model':'qwen2.5-14B','messages':[{'role':'user','content':'ping'}],'max_tokens':8}).encode()
           r=urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:8080/openai/v1/chat/completions',data=p,headers={'Content-Type':'application/json'}), timeout=60)
           print('kserve ok', r.status)
           "

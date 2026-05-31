@@ -272,12 +272,8 @@ def download_github_issues(
 
 
 @dsl.component(
-    base_image="docker.io/pytorch/pytorch:2.3.0-cuda12.1-cudnn8-runtime",
-    packages_to_install=[
-        "sentence-transformers==3.3.1",
-        "transformers==4.44.2",
-        "langchain-text-splitters",
-    ],
+    base_image="python:3.11-slim",
+    packages_to_install=["requests", "langchain-text-splitters"],
 )
 def chunk_and_embed(
     github_data: dsl.Input[dsl.Dataset],
@@ -285,19 +281,18 @@ def chunk_and_embed(
     base_url: str,
     chunk_size: int,
     chunk_overlap: int,
-    embedded_data: dsl.Output[dsl.Dataset]
+    embeddings_service_url: str,
+    embedding_batch_size: int,
+    embedded_data: dsl.Output[dsl.Dataset],
 ):
     import json
     import os
     import re
-    import torch
-    from sentence_transformers import SentenceTransformer
+    import requests
     from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    model = SentenceTransformer('sentence-transformers/all-mpnet-base-v2', device=device)
-    print(f"Model loaded on {device}")
-    EMBED_BATCH_SIZE = 32
+    print(f"Using embeddings service: {embeddings_service_url}")
+    embedding_batch_size = max(1, int(embedding_batch_size))
 
     records = []
 
@@ -358,15 +353,9 @@ def chunk_and_embed(
             # Split into chunks
             chunks = text_splitter.split_text(content)
 
-            print(f"File: {file_data['path']} -> {len(chunks)} chunks (avg: {sum(len(c) for c in chunks)/len(chunks):.0f} chars)")
+            print(f"File: {file_data['path']} -> {len(chunks)} chunks")
 
-            # Create embeddings in batches to avoid per-chunk model overhead.
-            embeddings = model.encode(
-                chunks,
-                batch_size=EMBED_BATCH_SIZE,
-                show_progress_bar=False,
-            )
-            for chunk_idx, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
+            for chunk_idx, chunk in enumerate(chunks):
                 records.append({
                     'file_unique_id': file_unique_id,
                     'repo_name': repo_name,
@@ -375,10 +364,25 @@ def chunk_and_embed(
                     'citation_url': citation_url[:1024],
                     'chunk_index': chunk_idx,
                     'content_text': chunk[:2000],
-                    'embedding': embedding.tolist()
                 })
 
-    print(f"Created {len(records)} total chunks")
+    print(f"Created {len(records)} chunks; requesting embeddings from TEI service...")
+
+    for i in range(0, len(records), embedding_batch_size):
+        batch = records[i:i + embedding_batch_size]
+        texts = [r["content_text"] for r in batch]
+        response = requests.post(
+            embeddings_service_url,
+            json={"inputs": texts},
+            headers={"Content-Type": "application/json"},
+            timeout=120,
+        )
+        response.raise_for_status()
+        vectors = response.json()
+        for idx, vector in enumerate(vectors):
+            batch[idx]["embedding"] = vector
+
+    print(f"Embedded {len(records)} chunks")
 
     with open(embedded_data.path, 'w', encoding='utf-8') as f:
         for record in records:
@@ -397,13 +401,25 @@ def store_milvus(
 ):
     from pymilvus import connections, utility, FieldSchema, CollectionSchema, DataType, Collection
     import json
+    import os
     from datetime import datetime
 
     SCHEMA_VERSION = 1
     SCHEMA_DESCRIPTION = f"RAG collection for documentation (v={SCHEMA_VERSION})"
     DELETE_BATCH_SIZE = 100
 
-    connections.connect("default", host=milvus_host, port=milvus_port)
+    milvus_user = os.environ.get("MILVUS_USER", "root")
+    milvus_password = os.environ.get("MILVUS_PASSWORD", "")
+    if not milvus_password:
+        raise RuntimeError("MILVUS_PASSWORD must be set via pipeline secret (not in source code)")
+
+    connections.connect(
+        "default",
+        host=milvus_host,
+        port=milvus_port,
+        user=milvus_user,
+        password=milvus_password,
+    )
 
     fields = [
         FieldSchema(name="id", dtype=DataType.INT64, is_primary=True, auto_id=True),
@@ -516,9 +532,13 @@ def github_rag_pipeline(
     base_url: str = "https://www.kubeflow.org/docs",
     chunk_size: int = 1000,
     chunk_overlap: int = 100,
-    milvus_host: str = "my-release-milvus.docs-agent.svc.cluster.local",
+    embeddings_service_url: str = (
+        "http://embeddings-service-predictor.ml-infra.svc.cluster.local/embed"
+    ),
+    embedding_batch_size: int = 32,
+    milvus_host: str = "milvus-milvus.ml-infra.svc.cluster.local",
     milvus_port: str = "19530",
-    collection_name: str = "kubeflow_docs_docs_rag"
+    collection_name: str = "kubeflow_docs_docs_rag",
 ):
     # Download GitHub directory
     download_task = download_github_directory(
@@ -541,7 +561,9 @@ def github_rag_pipeline(
         repo_name=repo_name,
         base_url=base_url,
         chunk_size=chunk_size,
-        chunk_overlap=chunk_overlap
+        chunk_overlap=chunk_overlap,
+        embeddings_service_url=embeddings_service_url,
+        embedding_batch_size=embedding_batch_size,
     )
     
     # Store in Milvus
@@ -549,8 +571,18 @@ def github_rag_pipeline(
         embedded_data=chunk_task.outputs["embedded_data"],
         milvus_host=milvus_host,
         milvus_port=milvus_port,
-        collection_name=collection_name
+        collection_name=collection_name,
     )
+
+    if k8s is not None:
+        k8s.use_secret_as_env(
+            store_task,
+            secret_name="milvus-auth",
+            secret_key_to_env={
+                "MILVUS_USER": "MILVUS_USER",
+                "MILVUS_PASSWORD": "MILVUS_PASSWORD",
+            },
+        )
 
 
 if __name__ == "__main__":

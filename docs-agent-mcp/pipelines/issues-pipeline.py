@@ -185,18 +185,16 @@ def download_github_issues(
 
 
 @dsl.component(
-    base_image="docker.io/pytorch/pytorch:2.3.0-cuda12.1-cudnn8-runtime",
-    packages_to_install=[
-        "sentence-transformers==3.3.1",
-        "transformers==4.44.2",
-        "langchain-text-splitters",
-    ],
+    base_image="python:3.11-slim",
+    packages_to_install=["requests", "langchain-text-splitters"],
 )
 def chunk_and_embed_issues(
     issues_data: dsl.Input[dsl.Dataset],
     chunk_size: int,
     chunk_overlap: int,
-    embedded_data: dsl.Output[dsl.Dataset]
+    embeddings_service_url: str,
+    embedding_batch_size: int,
+    embedded_data: dsl.Output[dsl.Dataset],
 ):
     """Chunk GitHub issues at comment boundaries and generate embeddings.
 
@@ -209,14 +207,11 @@ def chunk_and_embed_issues(
     """
     import json
     import re
-    import torch
-    from sentence_transformers import SentenceTransformer
+    import requests
     from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    model = SentenceTransformer('sentence-transformers/all-mpnet-base-v2', device=device)
-    print(f"Model loaded on {device}")
-    EMBED_BATCH_SIZE = 32
+    print(f"Using embeddings service: {embeddings_service_url}")
+    embedding_batch_size = max(1, int(embedding_batch_size))
 
     def parse_metadata(content):
         """Extract structured metadata from issue content."""
@@ -284,13 +279,7 @@ def chunk_and_embed_issues(
                 if not chunks:
                     chunks = [prefix + content[:effective_size]]
 
-            # Embed chunks in one call per issue to reduce model invocation overhead.
-            embeddings = model.encode(
-                chunks,
-                batch_size=EMBED_BATCH_SIZE,
-                show_progress_bar=False,
-            )
-            for chunk_idx, (chunk_text, embedding) in enumerate(zip(chunks, embeddings)):
+            for chunk_idx, chunk_text in enumerate(chunks):
                 records.append({
                     "file_unique_id": f"{metadata['repo_name']}:issues/{metadata['issue_number']}",
                     "repo_name": metadata["repo_name"],
@@ -300,13 +289,26 @@ def chunk_and_embed_issues(
                     "citation_url": metadata["citation_url"],
                     "chunk_index": chunk_idx,
                     "content_text": chunk_text[:2000],
-                    "embedding": embedding.tolist(),
                     "source_type": "issue",
                 })
 
             print(f"Issue #{metadata['issue_number']}: {len(chunks)} chunks")
 
-    print(f"Total chunks: {len(records)}")
+    print(f"Total chunks: {len(records)}; requesting embeddings from TEI service...")
+
+    for i in range(0, len(records), embedding_batch_size):
+        batch = records[i:i + embedding_batch_size]
+        texts = [r["content_text"] for r in batch]
+        response = requests.post(
+            embeddings_service_url,
+            json={"inputs": texts},
+            headers={"Content-Type": "application/json"},
+            timeout=120,
+        )
+        response.raise_for_status()
+        vectors = response.json()
+        for idx, vector in enumerate(vectors):
+            batch[idx]["embedding"] = vector
 
     with open(embedded_data.path, 'w', encoding='utf-8') as f:
         for record in records:
@@ -330,6 +332,7 @@ def store_issues_milvus(
     """
     from pymilvus import connections, utility, FieldSchema, CollectionSchema, DataType, Collection
     import json
+    import os
     import re
     from datetime import datetime
 
@@ -337,7 +340,18 @@ def store_issues_milvus(
     SCHEMA_DESCRIPTION = f"RAG collection for GitHub issues (v={SCHEMA_VERSION})"
     DELETE_BATCH_SIZE = 100
 
-    connections.connect("default", host=milvus_host, port=milvus_port)
+    milvus_user = os.environ.get("MILVUS_USER", "root")
+    milvus_password = os.environ.get("MILVUS_PASSWORD", "")
+    if not milvus_password:
+        raise RuntimeError("MILVUS_PASSWORD must be set via pipeline secret (not in source code)")
+
+    connections.connect(
+        "default",
+        host=milvus_host,
+        port=milvus_port,
+        user=milvus_user,
+        password=milvus_password,
+    )
 
     fields = [
         FieldSchema(name="id", dtype=DataType.INT64, is_primary=True, auto_id=True),
@@ -462,9 +476,13 @@ def github_issues_rag_pipeline(
     github_token: str = "",
     chunk_size: int = 1500,
     chunk_overlap: int = 150,
-    milvus_host: str = "my-release-milvus.docs-agent.svc.cluster.local",
+    embeddings_service_url: str = (
+        "http://embeddings-service-predictor.ml-infra.svc.cluster.local/embed"
+    ),
+    embedding_batch_size: int = 32,
+    milvus_host: str = "milvus-milvus.ml-infra.svc.cluster.local",
     milvus_port: str = "19530",
-    collection_name: str = "issues_rag"
+    collection_name: str = "issues_rag",
 ):
     download_task = download_github_issues(
         repos=repos,
@@ -485,14 +503,26 @@ def github_issues_rag_pipeline(
         issues_data=download_task.outputs["issues_data"],
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
+        embeddings_service_url=embeddings_service_url,
+        embedding_batch_size=embedding_batch_size,
     )
 
-    store_issues_milvus(
+    store_task = store_issues_milvus(
         embedded_data=chunk_task.outputs["embedded_data"],
         milvus_host=milvus_host,
         milvus_port=milvus_port,
         collection_name=collection_name,
     )
+
+    if k8s is not None:
+        k8s.use_secret_as_env(
+            store_task,
+            secret_name="milvus-auth",
+            secret_key_to_env={
+                "MILVUS_USER": "MILVUS_USER",
+                "MILVUS_PASSWORD": "MILVUS_PASSWORD",
+            },
+        )
 
 
 if __name__ == "__main__":

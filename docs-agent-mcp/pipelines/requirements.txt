@@ -2,9 +2,8 @@ kfp
 kfp-kubernetes
 requests
 beautifulsoup4
-sentence-transformers
 langchain-text-splitters
-torch
-feast[milvus]
-pandas
+pyyaml
+pymilvus
 numpy
+pandas

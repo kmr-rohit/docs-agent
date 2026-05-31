@@ -1,7 +1,17 @@
 """Shared utility functions for pipeline components."""
 
+from __future__ import annotations
+
 import os
 import re
+from typing import Sequence
+
+import requests
+
+DEFAULT_EMBEDDINGS_URL = (
+    "http://embeddings-service-predictor.ml-infra.svc.cluster.local/embed"
+)
+DEFAULT_MILVUS_HOST = "milvus-milvus.ml-infra.svc.cluster.local"
 
 
 def resolve_github_token(github_token: str = "") -> str:
@@ -62,3 +72,37 @@ def clean_content(content: str) -> str:
     content = content.strip()
 
     return content
+
+
+def embed_texts(
+    texts: Sequence[str],
+    embeddings_service_url: str,
+    batch_size: int = 32,
+    timeout: int = 120,
+) -> list[list[float]]:
+    """Call the in-cluster TEI embeddings service for a list of texts."""
+    if not texts:
+        return []
+    if not embeddings_service_url.strip():
+        raise ValueError("embeddings_service_url is required")
+
+    batch_size = max(1, int(batch_size))
+    vectors: list[list[float]] = []
+
+    for start in range(0, len(texts), batch_size):
+        batch = list(texts[start : start + batch_size])
+        response = requests.post(
+            embeddings_service_url.strip(),
+            json={"inputs": batch},
+            headers={"Content-Type": "application/json"},
+            timeout=timeout,
+        )
+        response.raise_for_status()
+        payload = response.json()
+        if not isinstance(payload, list) or len(payload) != len(batch):
+            raise RuntimeError(
+                f"Embeddings service returned unexpected payload for batch size {len(batch)}"
+            )
+        vectors.extend(payload)
+
+    return vectors

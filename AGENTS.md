@@ -192,7 +192,7 @@ kubectl get svc -n docs-agent | grep -i milvus
 
 ### Milvus validation from inside the cluster
 
-Milvus service in `docs-agent` is typically `my-release-milvus` (`kubectl get svc -n docs-agent | grep -i milvus`).
+Milvus (operator) in `ml-infra` is typically `milvus-milvus` (`kubectl get svc -n ml-infra | grep -i milvus`).
 
 `kubectl run ... --rm -it` fails in non-interactive shells (“`--rm` should only be used for attached containers`”). Prefer creating a short-lived pod, waiting for completion, then reading logs:
 
@@ -204,7 +204,7 @@ kubectl run milvus-check --restart=Never -n docs-agent \
 from pymilvus import connections, utility, Collection
 connections.connect(
     \"default\",
-    host=\"my-release-milvus.docs-agent.svc.cluster.local\",
+    host=\"milvus-milvus.ml-infra.svc.cluster.local\",
     port=\"19530\",
     user=\"root\",
     password=\"Milvus\",
@@ -252,18 +252,18 @@ All components share a virtualenv at `/workspace/.venv`. Activate with `source /
 
 | Variable | Default | Description |
 |---|---|---|
-| `MILVUS_URI` | `http://localhost:19530` | Milvus connection URI |
+| `MILVUS_URI` | `http://milvus-milvus.ml-infra.svc.cluster.local:19530` | Milvus connection URI |
 | `MILVUS_USER` | `root` | Milvus username |
-| `MILVUS_PASSWORD` | `Milvus` | Milvus password |
+| `MILVUS_PASSWORD` | *(required, from secret)* | Milvus password — never in ConfigMap |
+| `EMBEDDINGS_URL` | `http://embeddings-service-predictor.ml-infra.svc.cluster.local/embed` | TEI embeddings service |
 | `COLLECTION_NAME` | `kubeflow_docs_docs_rag` | Milvus collection name |
-| `EMBEDDING_MODEL` | `sentence-transformers/all-mpnet-base-v2` | Sentence-transformer model |
 | `PORT` | `8000` | Server listen port |
 
 ### Important caveats
 
 - **No automated test suite** exists in this repo. Validation is done by building Docker images, deploying, and testing MCP tool calls.
 - **No linter configuration** is present. Use `python -m py_compile <file>` for syntax checks.
-- The `sentence-transformers` embedding model (~400 MB) is baked into the Docker image at build time. First local import also downloads it to `~/.cache/huggingface/`.
+- Embeddings are served by **TEI** (`embeddings-service` in `ml-infra`); MCP and pipelines call `EMBEDDINGS_URL` over HTTP (no torch in images).
 - The `docs-agent-mcp/pipelines/` directory contains Kubeflow Pipeline definitions designed for K8s clusters, not local execution.
 - Platform infrastructure is defined under `docs-agent-mcp/terraform/` (Knative, KServe, Milvus operator, KFP standalone, kagent, Istio policies).
 - The `oci-cli` Python package is installed in the venv for kubectl exec credential plugin. If you see `oci` import errors, ensure the venv is activated or `oci` is on PATH.

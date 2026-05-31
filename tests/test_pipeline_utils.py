@@ -7,7 +7,7 @@ from pathlib import Path
 PIPELINES_DIR = Path(__file__).parent.parent / "docs-agent-mcp" / "pipelines"
 sys.path.insert(0, str(PIPELINES_DIR))
 
-from utils import clean_content, resolve_github_token
+from utils import clean_content, embed_texts, resolve_github_token
 
 
 class TestResolveGithubToken:
@@ -200,3 +200,25 @@ class TestCleanContentEdgeCases:
         result = clean_content(content)
         assert "Deep content" in result
         assert "<" not in result
+
+
+class TestEmbedTexts:
+    def test_batches_requests(self, monkeypatch):
+        calls = []
+
+        class FakeResponse:
+            def raise_for_status(self):
+                return None
+
+            def json(self):
+                return [[0.1, 0.2], [0.3, 0.4]]
+
+        def fake_post(url, json, headers, timeout):
+            calls.append((url, len(json["inputs"])))
+            return FakeResponse()
+
+        monkeypatch.setattr("utils.requests.post", fake_post)
+
+        vectors = embed_texts(["a", "b"], "http://embeddings/embed", batch_size=2)
+        assert len(vectors) == 2
+        assert calls[0][1] == 2
