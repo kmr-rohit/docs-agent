@@ -31,9 +31,7 @@ def _init():
     with _init_lock:
         if client is None:
             if not MILVUS_PASSWORD:
-                raise RuntimeError(
-                    "MILVUS_PASSWORD is required (set via Kubernetes secret, not ConfigMap)"
-                )
+                raise RuntimeError("MILVUS_PASSWORD is required (set via Kubernetes secret, not ConfigMap)")
             client = MilvusClient(uri=MILVUS_URI, user=MILVUS_USER, password=MILVUS_PASSWORD)
 
 
