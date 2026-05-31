@@ -12,7 +12,11 @@ to add or refresh indexed content.
 | `issues_rag` | `docs-agent-mcp/pipelines/issues-pipeline.py` | `search_github_issues` |
 | `code_rag` | `docs-agent-mcp/pipelines/code-pipeline.py` | `search_kubeflow_code` |
 
-Milvus host (in-cluster): `my-release-milvus.docs-agent.svc.cluster.local:19530`
+Milvus host (in-cluster, **ml-infra**): `milvus-milvus.ml-infra.svc.cluster.local:19530`
+
+Embeddings (TEI): `http://embeddings-service-predictor.ml-infra.svc.cluster.local/embed`
+
+Legacy Milvus in `docs-agent` (`my-release-milvus`) is **not** used by the new MCP/pipelines unless you override parameters.
 
 **Incremental behavior:** `store_milvus` upserts by `file_unique_id` — it deletes old chunks for
 files being re-indexed, then inserts new ones. It does **not** drop the whole collection on each
@@ -46,54 +50,82 @@ python code-pipeline.py              # → code_rag_pipeline.yaml
 
 ---
 
-## 2. GitHub PAT secret (pipeline namespace)
+## 2. Secrets (profile namespace + kubeflow)
 
-Pipelines mount `github-pat` in the **`user`** namespace (Kubeflow profile namespace).
+Replace `user` with **your** profile namespace from `kubectl get profile` (e.g. `user`, `amlc-bruce`, `amlc-carl`).
+
+### GitHub PAT (`github-pat`)
 
 ```bash
 export GITHUB_PAT=ghp_your_token_here
+PROFILE_NS=user   # your profile
 
-kubectl create secret generic github-pat -n user \
+kubectl create secret generic github-pat -n "${PROFILE_NS}" \
   --from-literal=Github_Pat="${GITHUB_PAT}" \
   --dry-run=client -o yaml | kubectl apply -f -
 ```
 
-Optional: same secret in `docs-agent` if you run ad-hoc jobs there.
+### Milvus password (`milvus-auth`) — store steps
+
+Pipeline **store** components read `MILVUS_PASSWORD` from `milvus-auth` in the **`kubeflow`** namespace:
+
+```bash
+kubectl create secret generic milvus-auth -n kubeflow \
+  --from-literal=MILVUS_PASSWORD='Milvus' \
+  --dry-run=client -o yaml | kubectl apply -f -
+```
+
+Use the same password as `mcp-server-secret` in `docs-agent`.
 
 ---
 
 ## 3. Run pipelines
 
-### Option A — Kubeflow Pipelines UI (recommended)
+### Option A — Kubeflow Pipelines UI via Dex (recommended)
 
-**Multi-user mode:** every run must belong to a **profile namespace** (e.g. `user`, `amlc-bruce`).
-Port-forwarding only the pipeline UI often leaves namespace empty and causes:
+**Multi-user mode:** every run must belong to a **profile namespace**. If namespace is blank you get:
 
 `An experiment cannot have an empty namespace in multi-user mode`
 
-**Do this instead:**
+#### Step-by-step (Dex login)
 
-1. Port-forward the **Central Dashboard** (not just ml-pipeline-ui):
-   ```bash
-   kubectl port-forward -n kubeflow svc/ml-pipeline-ui 8080:80
-   ```
-   Or use your cluster’s Kubeflow dashboard URL if you have one (Istio ingress / LoadBalancer).
-
-2. Open http://localhost:8080 and **log in as your Kubeflow user** (Dex/email).
-
-3. Confirm your namespace — on OKE you likely have one of:
+1. **Find your profile namespace** (where runs and `github-pat` live):
    ```bash
    kubectl get profile
    ```
-   Common names: `user`, `amlc-bruce`, `amlc-carl`. Pipeline pods and secrets run in **that** namespace.
+   Example: `user`, `amlc-bruce`, or `amlc-carl`.
 
-4. **Pipelines** → **Upload pipeline** → select compiled YAML from `docs-agent-mcp/pipelines/`.
+2. **Port-forward the Central Dashboard** (includes Dex login flow):
+   ```bash
+   kubectl port-forward -n kubeflow svc/centraldashboard 8080:80
+   ```
+   Keep this terminal open.
 
-5. **Create run** → ensure the UI shows your namespace (top bar / experiment), not blank.
+3. Open **http://localhost:8080** in a browser.
 
-6. Leave `github_token` **empty** if `github-pat` secret exists in your profile namespace; or paste PAT.
+4. **Log in with Dex** (email / OIDC — use the identity your cluster admin configured).
 
-If you still see the namespace error from the UI, use **Option B** (Python client with explicit `namespace=`).
+5. After login, confirm the UI shows your **namespace** (profile name from step 1) in the header or namespace picker.
+
+6. Go to **Pipelines** (left menu) → **Upload pipeline** → choose a compiled YAML from `docs-agent-mcp/pipelines/`:
+   - `github_rag_pipeline.yaml`
+   - `github_issues_rag_pipeline.yaml`
+   - `code_rag_pipeline.yaml`
+
+7. **Create run** → pick or create an **experiment** in your namespace.
+
+8. **Parameters** — defaults already target ml-infra (no change needed unless you use a custom Milvus):
+   | Parameter | Default (ml-infra) |
+   |-----------|-------------------|
+   | `embeddings_service_url` | `http://embeddings-service-predictor.ml-infra.svc.cluster.local/embed` |
+   | `milvus_host` | `milvus-milvus.ml-infra.svc.cluster.local` |
+   | `milvus_port` | `19530` |
+
+9. Leave `github_token` **empty** if `github-pat` exists in your profile namespace.
+
+10. **Create** and watch the run graph. Pods appear in your profile namespace (`kubectl get pods -n user`).
+
+If namespace errors persist, use **Option B** (Python client with explicit `namespace=`).
 
 Run order (each is independent; run only what you need):
 
@@ -177,11 +209,13 @@ From the MCP pod (read-only):
 ```bash
 kubectl exec -n docs-agent deploy/mcp-kubeflow-docs -- python3 -c "
 from pymilvus import connections, utility, Collection
-connections.connect('default', host='my-release-milvus.docs-agent.svc.cluster.local', port='19530')
-for name in sorted(utility.list_collections()):
-    col = Collection(name)
-    col.load()
-    print(f'{name}: {col.num_entities} entities')
+connections.connect('default', host='milvus-milvus.ml-infra.svc.cluster.local', port='19530', user='root', password='Milvus')
+for name in ['kubeflow_docs_docs_rag', 'issues_rag', 'code_rag']:
+    if utility.has_collection(name):
+        col = Collection(name)
+        print(f'{name}: {col.num_entities} entities')
+    else:
+        print(f'{name}: (missing)')
 "
 ```
 
