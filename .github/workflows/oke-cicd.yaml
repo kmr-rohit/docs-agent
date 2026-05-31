@@ -152,7 +152,9 @@ jobs:
             --docker-email="${GHCR_USERNAME}@users.noreply.github.com" \
             --dry-run=client -o yaml | kubectl apply -f -
 
-          kubectl apply -f docs-agent-mcp/manifests/mcp-server/mcp-server.yaml
+          # Manifest template uses OWNER; deploy always sets the real GHCR image below.
+          sed "s|ghcr.io/OWNER/mcp-kubeflow-docs:latest|${FULL_IMAGE}|g" \
+            docs-agent-mcp/manifests/mcp-server/mcp-server.yaml | kubectl apply -f -
           kubectl set image deployment/mcp-kubeflow-docs \
             mcp-server="${FULL_IMAGE}" \
             -n "${{ env.K8S_NAMESPACE }}" || true
@@ -174,6 +176,9 @@ jobs:
           fi
 
           if [ "${DEPLOY_KSERVE}" = "true" ]; then
+            echo "Removing legacy docs-agent GPU InferenceService (frees GPU for ml-infra/qwen-llm)"
+            kubectl delete inferenceservice/qwen -n "${{ env.K8S_NAMESPACE }}" --ignore-not-found=true
+            kubectl delete svc/qwen-llm -n "${{ env.K8S_NAMESPACE }}" --ignore-not-found=true
             echo "Applying ml-infra Qwen KServe manifests"
             kubectl apply -f docs-agent-mcp/manifests/vllm/kserve-qwen.yaml
             kubectl rollout status deployment -n ml-infra -l serving.kserve.io/inferenceservice=qwen-llm --timeout=600s 2>/dev/null || true
@@ -181,7 +186,16 @@ jobs:
             echo "Skipping Qwen GPU deploy (no vllm manifest change; use workflow_dispatch to force)"
           fi
 
-      - name: Smoke test MCP
+      - name: Wait for ml-infra dependencies
+        run: |
+          set -euo pipefail
+          kubectl wait --for=condition=Ready inferenceservice/embeddings-service \
+            -n ml-infra --timeout=600s
+          kubectl wait --for=condition=Ready milvus/milvus \
+            -n ml-infra --timeout=600s 2>/dev/null || \
+            kubectl get milvus -n ml-infra
+
+      - name: Smoke test MCP and embeddings (ml-infra)
         run: |
           set -euo pipefail
           kubectl rollout status deployment/mcp-kubeflow-docs \
@@ -190,6 +204,16 @@ jobs:
           import urllib.request
           urllib.request.urlopen('http://127.0.0.1:8000/mcp', timeout=5)
           print('mcp server listening')
+          "
+          kubectl exec -n "${{ env.K8S_NAMESPACE }}" deploy/mcp-kubeflow-docs -- python3 -c "
+          import os, requests
+          url = os.environ['EMBEDDINGS_URL']
+          r = requests.post(url, json={'inputs': ['kubeflow pipelines smoke test']}, timeout=120)
+          r.raise_for_status()
+          vecs = r.json()
+          assert isinstance(vecs, list) and len(vecs) == 1
+          assert len(vecs[0]) == 768, f'unexpected dim {len(vecs[0])}'
+          print('embeddings smoke ok', url, 'dim', len(vecs[0]))
           "
           kubectl get agent,modelconfig -n "${{ env.K8S_NAMESPACE }}"
 

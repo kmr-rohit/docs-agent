@@ -62,7 +62,6 @@ spec:
           nvidia.com/gpu: "1"
     nodeSelector:
       nvidia.com/gpu: "true"
-      disk: 150gb
     tolerations:
       - operator: "Exists"
 ---
