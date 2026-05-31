@@ -7,9 +7,7 @@ from typing import Sequence
 
 import requests
 
-DEFAULT_EMBEDDINGS_URL = (
-    "http://embeddings-service-predictor.ml-infra.svc.cluster.local/embed"
-)
+DEFAULT_EMBEDDINGS_URL = "http://embeddings-service-predictor.ml-infra.svc.cluster.local/embed"
 DEFAULT_TIMEOUT_SEC = int(os.getenv("EMBEDDINGS_TIMEOUT_SEC", "60"))
 
 

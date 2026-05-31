@@ -191,9 +191,18 @@ jobs:
           set -euo pipefail
           kubectl wait --for=condition=Ready inferenceservice/embeddings-service \
             -n ml-infra --timeout=600s
-          kubectl wait --for=condition=Ready milvus/milvus \
-            -n ml-infra --timeout=600s 2>/dev/null || \
-            kubectl get milvus -n ml-infra
+          # Milvus CR reports Healthy in .status.status, not a Ready condition.
+          for i in $(seq 1 60); do
+            status="$(kubectl get milvus milvus -n ml-infra -o jsonpath='{.status.status}' 2>/dev/null || true)"
+            if [ "${status}" = "Healthy" ]; then
+              echo "milvus status=${status}"
+              break
+            fi
+            echo "waiting for milvus (status=${status:-unknown}) attempt ${i}/60"
+            sleep 10
+          done
+          kubectl get milvus -n ml-infra
+          test "$(kubectl get milvus milvus -n ml-infra -o jsonpath='{.status.status}')" = "Healthy"
 
       - name: Smoke test MCP and embeddings (ml-infra)
         run: |
