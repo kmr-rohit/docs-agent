@@ -62,3 +62,21 @@ variable "milvus_version" {
   type        = string
   default     = "v2.4.15"
 }
+
+variable "embeddings_model_id" {
+  description = "Hugging Face model id for TEI (must output 768-dim vectors for current Milvus schema)"
+  type        = string
+  default     = "sentence-transformers/all-mpnet-base-v2"
+}
+
+variable "embeddings_max_client_batch_size" {
+  description = "Max texts per /embed request (TEI --max-client-batch-size)"
+  type        = string
+  default     = "64"
+}
+
+variable "embeddings_max_batch_tokens" {
+  description = "Max total tokens per TEI batch (--max-batch-tokens)"
+  type        = string
+  default     = "16384"
+}
