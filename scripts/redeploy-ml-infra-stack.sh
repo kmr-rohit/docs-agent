@@ -23,7 +23,7 @@ teardown_docs_agent() {
   kubectl delete -f "${ROOT_DIR}/legacy/manifests/qwen-llm-service.yaml" --ignore-not-found=true 2>/dev/null || true
 
   echo "==> Optional: remove legacy Helm Milvus in docs-agent (uncomment if migrating)"
-  # helm uninstall my-release -n "${DOCS_AGENT_NS}" || true
+  bash "$(dirname "$0")/cleanup-legacy-docs-agent-milvus.sh"
 }
 
 terraform_plan() {

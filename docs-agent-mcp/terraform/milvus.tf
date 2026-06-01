@@ -78,11 +78,11 @@ spec:
     image: docker.io/milvusdb/milvus:${var.milvus_version}
     resources:
       requests:
-        cpu: 100m
-        memory: 256Mi
+        cpu: 250m
+        memory: 1Gi
       limits:
-        cpu: 500m
-        memory: 512Mi
+        cpu: "1"
+        memory: 2Gi
 YAML
 
   depends_on = [null_resource.wait_for_milvus_crd, kubernetes_namespace.ml_infra]

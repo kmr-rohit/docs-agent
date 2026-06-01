@@ -8,6 +8,8 @@ try:
 except ImportError:  # pragma: no cover
     k8s = None
 
+from utils import DEFAULT_EMBEDDING_BATCH_SIZE
+
 @dsl.component(
     base_image="docker.io/python:3.9",
     packages_to_install=["requests"]
@@ -372,9 +374,10 @@ def chunk_and_embed_code(
 
     print(f"Created {len(records)} code chunks; requesting embeddings from TEI service...")
 
+    max_tei_chars = 1000
     for i in range(0, len(records), embedding_batch_size):
         batch = records[i:i + embedding_batch_size]
-        texts = [r["content_text"] for r in batch]
+        texts = [r["content_text"][:max_tei_chars] for r in batch]
         response = requests.post(
             embeddings_service_url,
             json={"inputs": texts},
@@ -534,7 +537,7 @@ def store_code_milvus(
                 "index_type": "IVF_FLAT",
                 "params": {"nlist": min(1024, len(records))},
             }
-            collection.create_index("vector", index_params)
+            collection.create_index("vector", index_params, timeout=120)
         collection.load()
         print(f"Inserted {len(records)} records. Total: {collection.num_entities}")
     else:
@@ -555,7 +558,7 @@ def code_rag_pipeline(
     embeddings_service_url: str = (
         "http://embeddings-service-predictor.ml-infra.svc.cluster.local/embed"
     ),
-    embedding_batch_size: int = 32,
+    embedding_batch_size: int = DEFAULT_EMBEDDING_BATCH_SIZE,
     milvus_host: str = "milvus-milvus.ml-infra.svc.cluster.local",
     milvus_port: str = "19530",
     collection_name: str = "code_rag",

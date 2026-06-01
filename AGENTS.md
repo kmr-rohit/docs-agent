@@ -16,9 +16,11 @@ The MCP server at `docs-agent-mcp/mcp-server/server.py` is the main thing to val
 
 | Tool | Milvus Collection | Status |
 |---|---|---|
-| `search_kubeflow_docs` | `docs_rag` | Populated and loaded |
-| `search_github_issues` | `issues_rag` | Populated and loaded |
-| `search_kubeflow_code` | `code_rag` | Collection may exist with **0** entities until the code ingestion pipeline is rerun |
+| `search_kubeflow_docs` | `kubeflow_docs_docs_rag` | Populated after docs pipeline |
+| `search_github_issues` | `issues_rag` | Populated after issues pipeline |
+| `search_kubeflow_code` | `code_rag` | Populated after code pipeline |
+
+**Canonical Milvus** (pipelines + MCP): `milvus-milvus.ml-infra.svc.cluster.local:19530`. Legacy `my-release-milvus` in `docs-agent` is obsolete; remove with `scripts/cleanup-legacy-docs-agent-milvus.sh`.
 
 The server uses FastMCP with `streamable-http` transport on port 8000. The MCP endpoint is at `/mcp`. The checked-in `docs-agent-mcp/mcp-server/server.py` may lag the cluster image (for example, additional tools); validate with `tools/list` against the live deployment.
 
@@ -221,7 +223,7 @@ kubectl logs milvus-check -n docs-agent
 kubectl delete pod milvus-check -n docs-agent
 ```
 
-Example output observed in this environment: `docs_rag` and `issues_rag` populated; `code_rag` exists with **0** entities until the code ingestion pipeline is rerun.
+Post-deploy MCP smoke (all three tools): `kubectl exec -n docs-agent deploy/mcp-kubeflow-docs -- python3 /app/smoke_tools.py`
 
 ### MCP “hello world” (live Milvus + `search_kubeflow_docs`)
 

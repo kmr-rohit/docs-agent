@@ -9,13 +9,15 @@ import requests
 
 DEFAULT_EMBEDDINGS_URL = "http://embeddings-service-predictor.ml-infra.svc.cluster.local/embed"
 DEFAULT_TIMEOUT_SEC = int(os.getenv("EMBEDDINGS_TIMEOUT_SEC", "60"))
+# TEI all-mpnet-base-v2: each input must be <384 tokens.
+MAX_TEI_INPUT_CHARS = int(os.getenv("MAX_TEI_INPUT_CHARS", "1000"))
 
 
 def embed_texts(
     texts: Sequence[str],
     *,
     url: str | None = None,
-    batch_size: int = 32,
+    batch_size: int = 8,
     timeout: int = DEFAULT_TIMEOUT_SEC,
 ) -> list[list[float]]:
     """Return embedding vectors for each input string (768-dim for all-mpnet-base-v2)."""
@@ -30,7 +32,7 @@ def embed_texts(
     vectors: list[list[float]] = []
 
     for start in range(0, len(texts), batch_size):
-        batch = list(texts[start : start + batch_size])
+        batch = [t[:MAX_TEI_INPUT_CHARS] for t in texts[start : start + batch_size]]
         response = requests.post(
             service_url,
             json={"inputs": batch},
