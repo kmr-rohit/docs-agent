@@ -24,20 +24,9 @@ The official LLM implementation of the Kubeflow Documentation Assistant powered 
 | Path | Purpose |
 |------|---------|
 | `docs-agent-mcp/` | MCP server, Kagent manifests, RAG pipelines, and Terraform platform stack |
-| `legacy/` | Historical FastAPI servers, older manifests, and Feast-era pipeline copies (not deployed) |
+| `legacy/` | Historical FastAPI servers, older manifests, and Feast-era pipeline copies |
 | `frontend/` | Docs site chatbot assets (`docs_scripts/`, `docs_styles/`) |
 | `.github/workflows/` | CI/CD (`oke-cicd.yaml` builds MCP, runs tests, deploys to OKE) |
-
-### Active cluster endpoints (current stack)
-
-| Service | Namespace | Port | Purpose |
-|---------|-----------|------|---------|
-| `mcp-kubeflow-docs` | `docs-agent` | 8000 | MCP streamable HTTP (`/mcp`) |
-| `milvus-milvus` | `ml-infra` | 19530 | Vector DB (gRPC/HTTP) |
-| `embeddings-service-predictor` | `ml-infra` | 80 → 8080 | TEI embeddings |
-| `qwen-llm-stable` | `ml-infra` | 80 | Kagent LLM (OpenAI-compatible) |
-
-Do not use legacy `my-release-milvus` in `docs-agent`; run `scripts/cleanup-legacy-docs-agent-milvus.sh` to remove it.
 
 ## Overview
 
