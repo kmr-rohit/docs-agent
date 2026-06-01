@@ -48,6 +48,9 @@ python issues-pipeline.py            # → github_issues_rag_pipeline.yaml
 python code-pipeline.py              # → code_rag_pipeline.yaml
 ```
 
+**Important:** Kubeflow **Clone pipeline** keeps the old compiled spec (including `embedding_batch_size: 32`).
+After pulling repo changes you must **re-compile** (commands above) and **Upload pipeline** again (new version), or set `embedding_batch_size` to **8** explicitly on each run. Default in source is **8** to avoid TEI `413 Payload Too Large`.
+
 ---
 
 ## 2. Secrets (profile namespace + kubeflow)
@@ -161,7 +164,10 @@ for name, path in [
         experiment_name="rag-ingestion",
         namespace=NAMESPACE,
         enable_caching=False,
-        arguments={"github_token": ""},
+        arguments={
+            "github_token": "",
+            "embedding_batch_size": 8,
+        },
     )
     print(name, result.run_id)
 ```
@@ -182,6 +188,7 @@ kubectl get workflows -n user
 |-----------|---------|-------|
 | `directory_path` | `content/en/docs` | Kubeflow website docs root |
 | `github_token` | `""` | Use secret mount or paste PAT |
+| `embedding_batch_size` | `8` | Lower (e.g. `4`) if TEI still returns 413 |
 | `collection_name` | `kubeflow_docs_docs_rag` | Do not change unless MCP config changes |
 
 ### Issues (`github_issues_rag_pipeline.yaml`)
@@ -190,6 +197,7 @@ kubectl get workflows -n user
 |-----------|---------|
 | `repos` | `kubeflow/kubeflow,kubeflow/pipelines,kubeflow/manifests` |
 | `max_issues_per_repo` | `200` |
+| `embedding_batch_size` | `8` |
 | `collection_name` | `issues_rag` |
 
 ### Code (`code_rag_pipeline.yaml`)
@@ -198,6 +206,7 @@ kubectl get workflows -n user
 |-----------|---------|
 | `repos` | `kubeflow/manifests` |
 | `directory_paths` | `apps/pipeline/upstream,apps/katib,...` |
+| `embedding_batch_size` | `8` |
 | `collection_name` | `code_rag` |
 
 ---
@@ -265,7 +274,8 @@ Ask: *"How do I deploy a model with KServe on Kubeflow?"* — agent should call
 | Pipeline pod `secret "github-pat" not found` | Create secret in **your profile** namespace (step 2), not only `docs-agent` |
 | Download very slow / 403 in logs | Set `GITHUB_PAT` / `github-pat` secret |
 | `issues_rag` / `code_rag` tool returns empty | Collection not created yet — run that pipeline |
-| Embed step slow | Normal on CPU; chunk step uses PyTorch without GPU |
+| TEI `413 Payload Too Large` on embed step | Re-upload compiled YAML or set `embedding_batch_size` to **8** or **4** (not 32) |
+| Embed step slow | Normal; embeddings call TEI over HTTP (no GPU in pipeline image) |
 | CD must not wipe Milvus | CD does not run pipelines; only redeploys MCP/Kagent |
 
 ---

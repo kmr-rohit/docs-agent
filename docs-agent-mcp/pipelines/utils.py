@@ -12,6 +12,8 @@ DEFAULT_EMBEDDINGS_URL = (
     "http://embeddings-service-predictor.ml-infra.svc.cluster.local/embed"
 )
 DEFAULT_MILVUS_HOST = "milvus-milvus.ml-infra.svc.cluster.local"
+# TEI returns 413 if a single /embed batch is too large (many long chunks).
+DEFAULT_EMBEDDING_BATCH_SIZE = 8
 
 
 def resolve_github_token(github_token: str = "") -> str:

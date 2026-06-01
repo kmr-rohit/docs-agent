@@ -8,6 +8,8 @@ try:
 except ImportError:  # pragma: no cover
     k8s = None
 
+from utils import DEFAULT_EMBEDDING_BATCH_SIZE
+
 @dsl.component(
     base_image="docker.io/python:3.9",
     packages_to_install=["requests"]
@@ -555,7 +557,7 @@ def code_rag_pipeline(
     embeddings_service_url: str = (
         "http://embeddings-service-predictor.ml-infra.svc.cluster.local/embed"
     ),
-    embedding_batch_size: int = 32,
+    embedding_batch_size: int = DEFAULT_EMBEDDING_BATCH_SIZE,
     milvus_host: str = "milvus-milvus.ml-infra.svc.cluster.local",
     milvus_port: str = "19530",
     collection_name: str = "code_rag",

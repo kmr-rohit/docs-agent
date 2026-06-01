@@ -7,7 +7,7 @@
 #    chunk_size: int [Default: 1000.0]
 #    collection_name: str [Default: 'kubeflow_docs_docs_rag']
 #    directory_path: str [Default: 'content/en/docs']
-#    embedding_batch_size: int [Default: 32.0]
+#    embedding_batch_size: int [Default: 8.0]
 #    embeddings_service_url: str [Default: 'http://embeddings-service-predictor.ml-infra.svc.cluster.local/embed']
 #    github_token: str [Default: '']
 #    milvus_host: str [Default: 'milvus-milvus.ml-infra.svc.cluster.local']
@@ -440,7 +440,7 @@ root:
         isOptional: true
         parameterType: STRING
       embedding_batch_size:
-        defaultValue: 32.0
+        defaultValue: 8.0
         isOptional: true
         parameterType: NUMBER_INTEGER
       embeddings_service_url:
