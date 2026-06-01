@@ -224,4 +224,4 @@ docs-agent-mcp/pipelines/*.yaml
 
 # Local cluster / kubectl notes (optional; keep untracked)
 Arch.md
-kube.md
+kube.md*.swp
