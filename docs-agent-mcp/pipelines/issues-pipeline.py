@@ -298,9 +298,10 @@ def chunk_and_embed_issues(
 
     print(f"Total chunks: {len(records)}; requesting embeddings from TEI service...")
 
+    max_tei_chars = 1000
     for i in range(0, len(records), embedding_batch_size):
         batch = records[i:i + embedding_batch_size]
-        texts = [r["content_text"] for r in batch]
+        texts = [r["content_text"][:max_tei_chars] for r in batch]
         response = requests.post(
             embeddings_service_url,
             json={"inputs": texts},

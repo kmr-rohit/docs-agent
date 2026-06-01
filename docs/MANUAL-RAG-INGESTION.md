@@ -274,7 +274,7 @@ Ask: *"How do I deploy a model with KServe on Kubeflow?"* — agent should call
 | Pipeline pod `secret "github-pat" not found` | Create secret in **your profile** namespace (step 2), not only `docs-agent` |
 | Download very slow / 403 in logs | Set `GITHUB_PAT` / `github-pat` secret |
 | `issues_rag` / `code_rag` tool returns empty | Collection not created yet — run that pipeline |
-| TEI `413 Payload Too Large` on embed step | Re-upload compiled YAML or set `embedding_batch_size` to **8** or **4** (not 32) |
+| TEI `413` on embed step | Each TEI input must be **&lt;384 tokens** (~1000 chars). Re-compile/upload YAML (truncates before embed). Lower `embedding_batch_size` does not fix oversized chunks. |
 | Embed step slow | Normal; embeddings call TEI over HTTP (no GPU in pipeline image) |
 | CD must not wipe Milvus | CD does not run pipelines; only redeploys MCP/Kagent |
 

@@ -12,8 +12,17 @@ DEFAULT_EMBEDDINGS_URL = (
     "http://embeddings-service-predictor.ml-infra.svc.cluster.local/embed"
 )
 DEFAULT_MILVUS_HOST = "milvus-milvus.ml-infra.svc.cluster.local"
-# TEI returns 413 if a single /embed batch is too large (many long chunks).
+# TEI all-mpnet-base-v2: each input must be <384 tokens (~1000 chars safe).
+MAX_TEI_INPUT_CHARS = 1000
+# Batch count only; per-input size is limited by MAX_TEI_INPUT_CHARS.
 DEFAULT_EMBEDDING_BATCH_SIZE = 8
+
+
+def truncate_for_tei(text: str, max_chars: int = MAX_TEI_INPUT_CHARS) -> str:
+    """Truncate text so TEI accepts it (413 if any input exceeds token limit)."""
+    if not text:
+        return ""
+    return text[:max_chars]
 
 
 def resolve_github_token(github_token: str = "") -> str:
@@ -92,7 +101,7 @@ def embed_texts(
     vectors: list[list[float]] = []
 
     for start in range(0, len(texts), batch_size):
-        batch = list(texts[start : start + batch_size])
+        batch = [truncate_for_tei(t) for t in texts[start : start + batch_size]]
         response = requests.post(
             embeddings_service_url.strip(),
             json={"inputs": batch},

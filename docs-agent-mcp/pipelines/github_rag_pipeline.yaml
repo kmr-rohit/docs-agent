@@ -154,13 +154,15 @@ deploymentSpec:
           \                    'citation_url': citation_url[:1024],\n            \
           \        'chunk_index': chunk_idx,\n                    'content_text':\
           \ chunk[:2000],\n                })\n\n    print(f\"Created {len(records)}\
-          \ chunks; requesting embeddings from TEI service...\")\n\n    for i in range(0,\
-          \ len(records), embedding_batch_size):\n        batch = records[i:i + embedding_batch_size]\n\
-          \        texts = [r[\"content_text\"] for r in batch]\n        response\
-          \ = requests.post(\n            embeddings_service_url,\n            json={\"\
-          inputs\": texts},\n            headers={\"Content-Type\": \"application/json\"\
-          },\n            timeout=120,\n        )\n        response.raise_for_status()\n\
-          \        vectors = response.json()\n        for idx, vector in enumerate(vectors):\n\
+          \ chunks; requesting embeddings from TEI service...\")\n\n    # TEI all-mpnet-base-v2\
+          \ rejects any input >=384 tokens (~1000 chars).\n    max_tei_chars = 1000\n\
+          \    for i in range(0, len(records), embedding_batch_size):\n        batch\
+          \ = records[i:i + embedding_batch_size]\n        texts = [r[\"content_text\"\
+          ][:max_tei_chars] for r in batch]\n        response = requests.post(\n \
+          \           embeddings_service_url,\n            json={\"inputs\": texts},\n\
+          \            headers={\"Content-Type\": \"application/json\"},\n       \
+          \     timeout=120,\n        )\n        response.raise_for_status()\n   \
+          \     vectors = response.json()\n        for idx, vector in enumerate(vectors):\n\
           \            batch[idx][\"embedding\"] = vector\n\n    print(f\"Embedded\
           \ {len(records)} chunks\")\n\n    with open(embedded_data.path, 'w', encoding='utf-8')\
           \ as f:\n        for record in records:\n            f.write(json.dumps(record,\
