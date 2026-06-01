@@ -20,7 +20,7 @@ run = client.create_run_from_pipeline_package(
         "chunk_size":       1000,
         "chunk_overlap":    100,
         "milvus_uri":       "http://milvus-milvus.ml-infra.svc.cluster.local:19530",
-        "collection_name":  "kubeflow_docs",
+        "collection_name":  "docs_rag",
     },
     run_name="kubeflow-docs-rag-run-1",
     experiment_name="kubeflow-docs-rag",

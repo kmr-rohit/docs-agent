@@ -7,7 +7,7 @@ from pathlib import Path
 PIPELINES_DIR = Path(__file__).parent.parent / "docs-agent-mcp" / "pipelines"
 sys.path.insert(0, str(PIPELINES_DIR))
 
-from utils import clean_content, embed_texts, resolve_github_token
+from utils import clean_content, embed_texts, resolve_github_token, truncate_for_tei
 
 
 class TestResolveGithubToken:
@@ -202,6 +202,12 @@ class TestCleanContentEdgeCases:
         assert "<" not in result
 
 
+class TestTruncateForTei:
+    def test_truncates_long_text(self):
+        long = "word " * 500
+        assert len(truncate_for_tei(long)) == 1000
+
+
 class TestEmbedTexts:
     def test_batches_requests(self, monkeypatch):
         calls = []
@@ -214,7 +220,7 @@ class TestEmbedTexts:
                 return [[0.1, 0.2], [0.3, 0.4]]
 
         def fake_post(url, json, headers, timeout):
-            calls.append((url, len(json["inputs"])))
+            calls.append((url, len(json["inputs"]), [len(t) for t in json["inputs"]]))
             return FakeResponse()
 
         monkeypatch.setattr("utils.requests.post", fake_post)
@@ -222,3 +228,22 @@ class TestEmbedTexts:
         vectors = embed_texts(["a", "b"], "http://embeddings/embed", batch_size=2)
         assert len(vectors) == 2
         assert calls[0][1] == 2
+
+    def test_truncates_inputs_for_tei(self, monkeypatch):
+        sent = []
+
+        class FakeResponse:
+            def raise_for_status(self):
+                return None
+
+            def json(self):
+                return [[0.1]]
+
+        def fake_post(url, json, headers, timeout):
+            sent.extend(json["inputs"])
+            return FakeResponse()
+
+        monkeypatch.setattr("utils.requests.post", fake_post)
+        long = "x" * 5000
+        embed_texts([long], "http://embeddings/embed", batch_size=1)
+        assert len(sent[0]) == 1000
