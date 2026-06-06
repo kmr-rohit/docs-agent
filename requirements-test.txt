@@ -4,3 +4,5 @@ numpy
 fastmcp
 langchain-text-splitters
 pyyaml
+fastapi>=0.115
+httpx>=0.27

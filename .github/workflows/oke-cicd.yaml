@@ -35,6 +35,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r docs-agent-mcp/mcp-server/requirements.txt
+          pip install -r docs-agent-mcp/feedback-service/requirements.txt
           pip install -r requirements-test.txt
           pip install ruff kfp kfp-kubernetes
 
@@ -46,10 +47,12 @@ jobs:
           python code-pipeline.py
 
       - name: Ruff lint
-        run: ruff check docs-agent-mcp/mcp-server tests docs-agent-mcp/pipelines
+        run: ruff check docs-agent-mcp/mcp-server docs-agent-mcp/feedback-service tests docs-agent-mcp/pipelines
 
-      - name: Compile MCP server
-        run: python -m py_compile docs-agent-mcp/mcp-server/*.py
+      - name: Compile MCP server and feedback service
+        run: |
+          python -m py_compile docs-agent-mcp/mcp-server/*.py
+          python -m py_compile docs-agent-mcp/feedback-service/*.py
 
       - name: Run Unit Tests
         run: pytest -v --tb=short

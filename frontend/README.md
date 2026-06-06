@@ -42,6 +42,30 @@ Host `docs_scripts/` and `docs_styles/` on Vercel and set `KUBEFLOW_DOCS_AGENT_U
 
 CORS: browser calls require the agent host to allow your Vercel origin. Default Istio ingress CORS uses configurable regexes (`kagent_cors_allow_origin_regexes`); the LB path depends on Kagent’s own CORS settings.
 
+## Feedback API (golden dataset)
+
+Each bot reply shows a **1–5 rating scale** plus optional comment. Ratings are stored by the feedback service for golden-dataset curation.
+
+Configure the feedback endpoint (expose `docs-feedback` via ingress or LoadBalancer in cluster):
+
+```html
+<script>
+  window.KUBEFLOW_DOCS_FEEDBACK_URL = 'https://YOUR_HOST/api/feedback';
+</script>
+```
+
+Or:
+
+```html
+<script src="/docs_scripts/chatbot.js" data-feedback-url="https://YOUR_HOST/api/feedback" defer></script>
+```
+
+In-cluster default service: `http://docs-feedback.docs-agent.svc.cluster.local:8080/api/feedback` (ClusterIP — not reachable from browsers until exposed).
+
+## Citations
+
+Retrieved sources are shown under each answer. The MCP tools emit `**Source:**` URLs and a machine-readable `<!--KUBEFLOW_CITATIONS:[...]-->` block; the widget collects these from the Kagent stream and renders a collapsible **Sources** list.
+
 ## Milvus collections (MCP tools)
 
 | Tool | Collection |

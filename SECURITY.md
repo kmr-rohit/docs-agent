@@ -11,6 +11,7 @@ This document describes known risks, mitigations, and operational checks for the
 | Component | Namespace | Typical exposure | Auth today |
 |-----------|-----------|------------------|------------|
 | Kagent UI / A2A | `docs-agent` | **Public** via `kagent-ui-lb` (LoadBalancer) or optional Istio ingress | **None** on A2A |
+| Feedback API (`/api/feedback`) | `docs-agent` | **ClusterIP** by default; expose via ingress/LB only if the website needs it | **None** |
 | MCP server (`/mcp`) | `docs-agent` | **ClusterIP only** (not on public internet) | **None** |
 | Milvus | `ml-infra` | Internal (`19530`) | `root` + secret password |
 | TEI embeddings | `ml-infra` | Internal | **None** |
@@ -209,6 +210,7 @@ Stale names (e.g. `kubeflow_docs_docs_rag`) should be dropped after migration to
 | P1 | Cap MCP `top_k` and query length |
 | P1 | NetworkPolicies for Milvus and MCP |
 | P1 | mTLS or API key Kagent → MCP |
+| P1 | Auth + rate limit on feedback API if exposed publicly |
 | P2 | OAuth for website + agent (GSoC direction) |
 | P2 | OCI WAF / rate limiting on public endpoint |
 
@@ -221,4 +223,5 @@ Stale names (e.g. `kubeflow_docs_docs_rag`) should be dropped after migration to
 - MCP server: `docs-agent-mcp/mcp-server/server.py`
 - Kagent CRDs: `docs-agent-mcp/manifests/kagent/setup.yaml`
 - Frontend agent URL config: `frontend/README.md`
+- Feedback service: `docs-agent-mcp/feedback-service/app.py`, manifest `docs-agent-mcp/manifests/feedback-service/feedback-service.yaml`
 - Agent development notes: `AGENTS.md`
