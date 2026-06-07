@@ -37,6 +37,17 @@ class TestExtractCitationUrls:
         assert urls == ["https://x.test"]
 
 
+class TestFilePathToUrl:
+    def test_maps_content_en_docs_path(self):
+        url = citations.file_path_to_url("content/en/docs/components/pipelines/introduction.md")
+        assert url == "https://www.kubeflow.org/docs/components/pipelines/introduction"
+
+    def test_extracts_markdown_links(self):
+        text = "See [pipelines](https://www.kubeflow.org/docs/components/pipelines/) for details."
+        urls = citations.extract_citation_urls(text)
+        assert "https://www.kubeflow.org/docs/components/pipelines" in urls
+
+
 class TestAppendCitationsBlock:
     def test_appends_block_when_urls_present(self):
         result = citations.append_citations_block("body", ["https://x.test"])

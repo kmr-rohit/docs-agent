@@ -5,7 +5,7 @@ import threading
 from fastmcp import FastMCP
 from pymilvus import MilvusClient
 
-from citations import append_citations_block, dedupe_urls
+from citations import append_citations_block, dedupe_urls, file_path_to_url
 from embeddings_client import embed_query
 
 MILVUS_URI = os.getenv("MILVUS_URI", "http://milvus-milvus.ml-infra.svc.cluster.local:19530")
@@ -88,7 +88,7 @@ def search_kubeflow_docs(query: str, top_k: int = 5) -> str:
     citation_urls: list[str] = []
     for i, hit in enumerate(hits, 1):
         entity = hit["entity"]
-        citation_url = entity.get("citation_url", "")
+        citation_url = entity.get("citation_url", "") or file_path_to_url(entity.get("file_path", ""))
         if citation_url:
             citation_urls.append(citation_url)
         entry = f"### Result {i} (score: {hit['distance']:.4f})"
@@ -186,7 +186,7 @@ def search_kubeflow_code(query: str, top_k: int = 5, resource_kind: str = "") ->
     citation_urls: list[str] = []
     for i, hit in enumerate(hits, 1):
         entity = hit["entity"]
-        citation_url = entity.get("citation_url", "")
+        citation_url = entity.get("citation_url", "") or file_path_to_url(entity.get("file_path", ""))
         if citation_url:
             citation_urls.append(citation_url)
         entry = f"### Result {i} (score: {hit['distance']:.4f})"

@@ -41,6 +41,7 @@ spec:
       containers:
         - name: feedback-api
           image: ghcr.io/OWNER/docs-feedback:latest
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 8080

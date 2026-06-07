@@ -177,7 +177,7 @@ function createChatbotElements() {
 }
 
 document.addEventListener('DOMContentLoaded', async function() {
-    console.log('Docs Bot Initialized (v1.2.0 - Kagent A2A, citations, feedback)');
+    console.log('Docs Bot Initialized (v1.2.1 - Kagent A2A, citations, feedback)');
     
     // Create chatbot HTML structure dynamically and wait for completion
     const elementsCreated = await createChatbotElements();
@@ -521,10 +521,29 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     const FEEDBACK_API_URL = resolveFeedbackApiUrl();
     const SOURCE_LINE_RE = /\*\*Source:\*\*\s*(\S+)/g;
+    const FILE_LINE_RE = /\*\*File:\*\*\s*(\S+)/g;
+    const MARKDOWN_LINK_RE = /\[([^\]]*)\]\((https?:\/\/[^)]+)\)/g;
+    const BARE_URL_RE = /https?:\/\/[^\s)<\]]+/g;
     const CITATIONS_BLOCK_RE = /<!--KUBEFLOW_CITATIONS:(\[.*?\])-->/;
+    const KUBEFLOW_DOCS_BASE = 'https://www.kubeflow.org';
 
     function normalizeCitationUrl(url) {
-        return String(url || '').trim().replace(/[)>.,;]+$/, '');
+        let cleaned = String(url || '').trim().replace(/[)>.,;]+$/, '');
+        if (cleaned.endsWith('/') && cleaned.includes('://')) {
+            cleaned = cleaned.replace(/\/+$/, '');
+        }
+        return cleaned;
+    }
+
+    function filePathToKubeflowUrl(filePath) {
+        if (!filePath) return '';
+        const path = String(filePath).trim();
+        if (/^https?:\/\//i.test(path)) return normalizeCitationUrl(path);
+        let normalized = path.replace(/^content\/en\//, '').replace(/\.md$/, '');
+        if (normalized.startsWith('docs/')) {
+            return normalizeCitationUrl(`${KUBEFLOW_DOCS_BASE}/${normalized}`);
+        }
+        return '';
     }
 
     function dedupeCitationUrls(urls) {
@@ -549,6 +568,28 @@ document.addEventListener('DOMContentLoaded', async function() {
             urls.push(normalizeCitationUrl(match[1]));
         }
 
+        let fileMatch;
+        const fileRegex = new RegExp(FILE_LINE_RE.source, 'g');
+        while ((fileMatch = fileRegex.exec(text)) !== null) {
+            const fromFile = filePathToKubeflowUrl(fileMatch[1]);
+            if (fromFile) urls.push(fromFile);
+        }
+
+        let mdMatch;
+        const mdRegex = new RegExp(MARKDOWN_LINK_RE.source, 'g');
+        while ((mdMatch = mdRegex.exec(text)) !== null) {
+            urls.push(normalizeCitationUrl(mdMatch[2]));
+        }
+
+        let bareMatch;
+        const bareRegex = new RegExp(BARE_URL_RE.source, 'g');
+        while ((bareMatch = bareRegex.exec(text)) !== null) {
+            const candidate = normalizeCitationUrl(bareMatch[0]);
+            if (!/\s/.test(candidate) && /kubeflow\.org|github\.com/i.test(candidate)) {
+                urls.push(candidate);
+            }
+        }
+
         const blockMatch = text.match(CITATIONS_BLOCK_RE);
         if (blockMatch) {
             try {
@@ -570,11 +611,13 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     function stripCitationsBlock(text) {
         if (!text) return '';
-        return text.replace(CITATIONS_BLOCK_RE, '').trim();
+        // Do not .trim() — Kagent chunks rely on leading spaces (e.g. ' Pip', ' is').
+        return text.replace(CITATIONS_BLOCK_RE, '');
     }
 
     function finalizeBotResponse() {
         const responseText = currentMessageContent.trim();
+        extractCitationsFromText(responseText).forEach((url) => streamCitations.add(url));
         const citations = dedupeCitationUrls([...streamCitations]);
 
         if (citations.length > 0) {
@@ -774,7 +817,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         
         if (response.type === 'content') {
             const visibleContent = stripCitationsBlock(response.content);
-            if (!visibleContent) return;
+            if (visibleContent === '') return;
             if (!currentMessageDiv) {
                 if (!chatMessages) {
                     console.error('Cannot display message: chat messages container not found');
@@ -796,7 +839,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 removeTypingIndicator();
             }
             
-            // Append new content (hide machine-readable citation blocks from the answer)
+            // Kagent ADK partial chunks include leading spaces where needed (e.g. ' Pip', ' is')
             currentMessageContent += visibleContent;
             const paragraph = currentMessageDiv.querySelector('p');
             

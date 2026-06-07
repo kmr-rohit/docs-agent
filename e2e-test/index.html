@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kubeflow Docs Bot — E2E Test</title>
+  <link rel="stylesheet" href="../frontend/docs_styles/chatbot.css?v=1.2.1" />
+  <style>
+    body { margin: 0; font-family: Inter, system-ui, sans-serif; background: #f1f5f9; min-height: 100vh; }
+    .hero { max-width: 720px; margin: 0 auto; padding: 48px 24px 120px; }
+    h1 { color: #0f172a; }
+    p { color: #475569; line-height: 1.6; }
+  </style>
+  <script>
+    window.KUBEFLOW_DOCS_AGENT_URL = 'http://127.0.0.1:18080/a2a/docs-agent/kubeflow-docs-agent';
+    window.KUBEFLOW_DOCS_FEEDBACK_URL = 'http://127.0.0.1:18081/api/feedback';
+  </script>
+</head>
+<body>
+  <div class="hero">
+    <h1>Kubeflow website — local E2E</h1>
+    <p>Ask a Kubeflow question, verify <strong>Sources</strong> citations and spaced streaming text, then submit feedback.</p>
+  </div>
+  <script src="../frontend/docs_scripts/chatbot.js?v=1.2.1" defer></script>
+</body>
+</html>
