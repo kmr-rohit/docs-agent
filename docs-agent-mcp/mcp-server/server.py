@@ -5,6 +5,7 @@ import threading
 from fastmcp import FastMCP
 from pymilvus import MilvusClient
 
+from citations import append_citations_block, dedupe_urls, file_path_to_url
 from embeddings_client import embed_query
 
 MILVUS_URI = os.getenv("MILVUS_URI", "http://milvus-milvus.ml-infra.svc.cluster.local:19530")
@@ -84,15 +85,19 @@ def search_kubeflow_docs(query: str, top_k: int = 5) -> str:
         return "No results found for your query."
 
     results = []
+    citation_urls: list[str] = []
     for i, hit in enumerate(hits, 1):
         entity = hit["entity"]
+        citation_url = entity.get("citation_url", "") or file_path_to_url(entity.get("file_path", ""))
+        if citation_url:
+            citation_urls.append(citation_url)
         entry = f"### Result {i} (score: {hit['distance']:.4f})"
-        entry += f"\n**Source:** {entity.get('citation_url', '')}"
+        entry += f"\n**Source:** {citation_url}"
         entry += f"\n**File:** {entity.get('file_path', '')}"
         entry += f"\n\n{entity.get('content_text', '')}\n"
         results.append(entry)
 
-    return "\n---\n".join(results)
+    return append_citations_block("\n---\n".join(results), dedupe_urls(citation_urls))
 
 
 @mcp.tool()
@@ -122,10 +127,14 @@ def search_github_issues(query: str, top_k: int = 5, repo: str = "", state: str 
         return "No issues found for your query."
 
     results = []
+    citation_urls: list[str] = []
     for i, hit in enumerate(hits, 1):
         entity = hit["entity"]
+        citation_url = entity.get("citation_url", "")
+        if citation_url:
+            citation_urls.append(citation_url)
         entry = f"### Result {i} (score: {hit['distance']:.4f})"
-        entry += f"\n**Source:** {entity.get('citation_url', '')}"
+        entry += f"\n**Source:** {citation_url}"
         entry += f"\n**Repo:** {entity.get('repo_name', '')}"
 
         issue_num = entity.get("issue_number", "")
@@ -141,7 +150,7 @@ def search_github_issues(query: str, top_k: int = 5, repo: str = "", state: str 
         entry += f"\n\n{entity.get('content_text', '')}\n"
         results.append(entry)
 
-    return "\n---\n".join(results)
+    return append_citations_block("\n---\n".join(results), dedupe_urls(citation_urls))
 
 
 @mcp.tool()
@@ -174,10 +183,14 @@ def search_kubeflow_code(query: str, top_k: int = 5, resource_kind: str = "") ->
         return "No code results found for your query."
 
     results = []
+    citation_urls: list[str] = []
     for i, hit in enumerate(hits, 1):
         entity = hit["entity"]
+        citation_url = entity.get("citation_url", "") or file_path_to_url(entity.get("file_path", ""))
+        if citation_url:
+            citation_urls.append(citation_url)
         entry = f"### Result {i} (score: {hit['distance']:.4f})"
-        entry += f"\n**Source:** {entity.get('citation_url', '')}"
+        entry += f"\n**Source:** {citation_url}"
         entry += f"\n**File:** {entity.get('file_path', '')}"
 
         kind = entity.get("resource_kind", "")
@@ -196,7 +209,7 @@ def search_kubeflow_code(query: str, top_k: int = 5, resource_kind: str = "") ->
         entry += f"\n\n```\n{entity.get('content_text', '')}\n```\n"
         results.append(entry)
 
-    return "\n---\n".join(results)
+    return append_citations_block("\n---\n".join(results), dedupe_urls(citation_urls))
 
 
 if __name__ == "__main__":

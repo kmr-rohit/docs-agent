@@ -1,0 +1,90 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: feedback-db
+  namespace: docs-agent
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: feedback-service-config
+  namespace: docs-agent
+data:
+  PORT: "8080"
+  FEEDBACK_DB_PATH: /data/feedback.db
+  # Tighten for production, e.g. https://kubeflow.org,https://your-vercel-app.vercel.app
+  ALLOWED_ORIGINS: "*"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: docs-feedback
+  namespace: docs-agent
+  labels:
+    app: docs-feedback
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: docs-feedback
+  template:
+    metadata:
+      labels:
+        app: docs-feedback
+    spec:
+      containers:
+        - name: feedback-api
+          image: ghcr.io/OWNER/docs-feedback:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: feedback-service-config
+          volumeMounts:
+            - name: feedback-data
+              mountPath: /data
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+      volumes:
+        - name: feedback-data
+          persistentVolumeClaim:
+            claimName: feedback-db
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: docs-feedback
+  namespace: docs-agent
+spec:
+  selector:
+    app: docs-feedback
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+  type: ClusterIP

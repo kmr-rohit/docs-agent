@@ -177,7 +177,7 @@ function createChatbotElements() {
 }
 
 document.addEventListener('DOMContentLoaded', async function() {
-    console.log('Docs Bot Initialized (v1.1.0 - Kagent A2A, configurable URL)');
+    console.log('Docs Bot Initialized (v1.2.1 - Kagent A2A, citations, feedback)');
     
     // Create chatbot HTML structure dynamically and wait for completion
     const elementsCreated = await createChatbotElements();
@@ -236,6 +236,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     let chatsStack = []; // Stack of all chats: [{name: string, messages: array}, ...]
     let currentChatIndex = -1; // Index of current chat in stack, -1 for new unsaved chat
     let currentContextId = generateUUID(); // KAgent session ID
+    let streamCitations = new Set();
+    let lastUserQuery = '';
+    let currentMessageId = null;
     
     // TODO 2: Browser storage functions ✅
     function saveChatsToStorage() {
@@ -502,6 +505,138 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     const API_BASE_URL = resolveAgentApiUrl();
 
+    // Feedback API — override for kubeflow.org / Vercel:
+    //   window.KUBEFLOW_DOCS_FEEDBACK_URL = 'https://your-host/api/feedback'
+    // or <script data-feedback-url="https://...">
+    function resolveFeedbackApiUrl() {
+        if (typeof window !== 'undefined' && window.KUBEFLOW_DOCS_FEEDBACK_URL) {
+            return String(window.KUBEFLOW_DOCS_FEEDBACK_URL).replace(/\/$/, '');
+        }
+        const scriptEl = document.querySelector('script[data-feedback-url]');
+        if (scriptEl?.dataset?.feedbackUrl) {
+            return scriptEl.dataset.feedbackUrl.replace(/\/$/, '');
+        }
+        return '';
+    }
+
+    const FEEDBACK_API_URL = resolveFeedbackApiUrl();
+    const SOURCE_LINE_RE = /\*\*Source:\*\*\s*(\S+)/g;
+    const FILE_LINE_RE = /\*\*File:\*\*\s*(\S+)/g;
+    const MARKDOWN_LINK_RE = /\[([^\]]*)\]\((https?:\/\/[^)]+)\)/g;
+    const BARE_URL_RE = /https?:\/\/[^\s)<\]]+/g;
+    const CITATIONS_BLOCK_RE = /<!--KUBEFLOW_CITATIONS:(\[.*?\])-->/;
+    const KUBEFLOW_DOCS_BASE = 'https://www.kubeflow.org';
+
+    function normalizeCitationUrl(url) {
+        let cleaned = String(url || '').trim().replace(/[)>.,;]+$/, '');
+        if (cleaned.endsWith('/') && cleaned.includes('://')) {
+            cleaned = cleaned.replace(/\/+$/, '');
+        }
+        return cleaned;
+    }
+
+    function filePathToKubeflowUrl(filePath) {
+        if (!filePath) return '';
+        const path = String(filePath).trim();
+        if (/^https?:\/\//i.test(path)) return normalizeCitationUrl(path);
+        let normalized = path.replace(/^content\/en\//, '').replace(/\.md$/, '');
+        if (normalized.startsWith('docs/')) {
+            return normalizeCitationUrl(`${KUBEFLOW_DOCS_BASE}/${normalized}`);
+        }
+        return '';
+    }
+
+    function dedupeCitationUrls(urls) {
+        const seen = new Set();
+        const ordered = [];
+        urls.forEach((url) => {
+            const normalized = normalizeCitationUrl(url);
+            if (!normalized || seen.has(normalized)) return;
+            seen.add(normalized);
+            ordered.push(normalized);
+        });
+        return ordered;
+    }
+
+    function extractCitationsFromText(text) {
+        if (!text) return [];
+
+        const urls = [];
+        let match;
+        const sourceRegex = new RegExp(SOURCE_LINE_RE.source, 'g');
+        while ((match = sourceRegex.exec(text)) !== null) {
+            urls.push(normalizeCitationUrl(match[1]));
+        }
+
+        let fileMatch;
+        const fileRegex = new RegExp(FILE_LINE_RE.source, 'g');
+        while ((fileMatch = fileRegex.exec(text)) !== null) {
+            const fromFile = filePathToKubeflowUrl(fileMatch[1]);
+            if (fromFile) urls.push(fromFile);
+        }
+
+        let mdMatch;
+        const mdRegex = new RegExp(MARKDOWN_LINK_RE.source, 'g');
+        while ((mdMatch = mdRegex.exec(text)) !== null) {
+            urls.push(normalizeCitationUrl(mdMatch[2]));
+        }
+
+        let bareMatch;
+        const bareRegex = new RegExp(BARE_URL_RE.source, 'g');
+        while ((bareMatch = bareRegex.exec(text)) !== null) {
+            const candidate = normalizeCitationUrl(bareMatch[0]);
+            if (!/\s/.test(candidate) && /kubeflow\.org|github\.com/i.test(candidate)) {
+                urls.push(candidate);
+            }
+        }
+
+        const blockMatch = text.match(CITATIONS_BLOCK_RE);
+        if (blockMatch) {
+            try {
+                const blockUrls = JSON.parse(blockMatch[1]);
+                if (Array.isArray(blockUrls)) {
+                    blockUrls.forEach((item) => urls.push(normalizeCitationUrl(item)));
+                }
+            } catch (error) {
+                console.debug('Failed to parse citation block:', error);
+            }
+        }
+
+        return dedupeCitationUrls(urls);
+    }
+
+    function collectCitationsFromText(text) {
+        extractCitationsFromText(text).forEach((url) => streamCitations.add(url));
+    }
+
+    function stripCitationsBlock(text) {
+        if (!text) return '';
+        // Do not .trim() — Kagent chunks rely on leading spaces (e.g. ' Pip', ' is').
+        return text.replace(CITATIONS_BLOCK_RE, '');
+    }
+
+    function finalizeBotResponse() {
+        const responseText = currentMessageContent.trim();
+        extractCitationsFromText(responseText).forEach((url) => streamCitations.add(url));
+        const citations = dedupeCitationUrls([...streamCitations]);
+
+        if (citations.length > 0) {
+            addCitations(citations);
+        }
+
+        if (currentMessageDiv && responseText) {
+            addFeedbackWidget(currentMessageDiv, {
+                query: lastUserQuery,
+                response: responseText,
+                citations: citations,
+                messageId: currentMessageId || generateUUID()
+            });
+        }
+
+        streamCitations.clear();
+        currentMessageId = null;
+    }
+
     // API connection status
     let isConnected = false;
 
@@ -564,6 +699,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             // Reset current message state
             currentMessageDiv = null;
             currentMessageContent = '';
+            streamCitations.clear();
+            currentMessageId = messageId;
             
             while (true) {
                 const { done, value } = await reader.read();
@@ -593,6 +730,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                                     content: currentMessageContent.trim()
                                 });
                             }
+                            finalizeBotResponse();
                             currentMessageDiv = null;
                             currentMessageContent = '';
                             autoSaveCurrentChat();
@@ -610,6 +748,13 @@ document.addEventListener('DOMContentLoaded', async function() {
                         const messageObj = result.message || (result.status && result.status.message);
                         
                         if (messageObj && messageObj.parts) {
+                            // Always collect citations from tool/status text (including hidden tool output)
+                            for (const part of messageObj.parts) {
+                                if (part.kind === 'text' && part.text) {
+                                    collectCitationsFromText(part.text);
+                                }
+                            }
+
                             // Skip user messages echoed back by KAgent
                             const isUserMessage = messageObj.role === 'user';
                             // Skip the final full message if we already streamed partial chunks
@@ -635,6 +780,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                                     content: currentMessageContent.trim()
                                 });
                             }
+                            finalizeBotResponse();
                             currentMessageDiv = null;
                             currentMessageContent = '';
                             autoSaveCurrentChat();
@@ -665,11 +811,13 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
         
         if (response.type === 'citations') {
-            addCitations(response.citations);
+            dedupeCitationUrls(response.citations || []).forEach((url) => streamCitations.add(url));
             return;
         }
         
         if (response.type === 'content') {
+            const visibleContent = stripCitationsBlock(response.content);
+            if (visibleContent === '') return;
             if (!currentMessageDiv) {
                 if (!chatMessages) {
                     console.error('Cannot display message: chat messages container not found');
@@ -691,8 +839,8 @@ document.addEventListener('DOMContentLoaded', async function() {
                 removeTypingIndicator();
             }
             
-            // Append new content
-            currentMessageContent += response.content;
+            // Kagent ADK partial chunks include leading spaces where needed (e.g. ' Pip', ' is')
+            currentMessageContent += visibleContent;
             const paragraph = currentMessageDiv.querySelector('p');
             
             // Format streaming content
@@ -875,6 +1023,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         const message = userInput.value.trim();
         if (!message || isTyping) return;
 
+        lastUserQuery = message;
+
         // Add user message to history
         messagesHistory.push({
             role: 'user',
@@ -1023,6 +1173,129 @@ document.addEventListener('DOMContentLoaded', async function() {
         
         // Attach citations to the message content
         messageContent.appendChild(citationsDiv);
+        scrollToBottom();
+    }
+
+    async function submitFeedback(payload) {
+        if (!FEEDBACK_API_URL) {
+            console.warn('Feedback API URL not configured; set window.KUBEFLOW_DOCS_FEEDBACK_URL');
+            return { ok: false, error: 'not_configured' };
+        }
+
+        try {
+            const response = await fetch(FEEDBACK_API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            return { ok: true };
+        } catch (error) {
+            console.error('Failed to submit feedback:', error);
+            return { ok: false, error: String(error) };
+        }
+    }
+
+    function addFeedbackWidget(messageDiv, meta) {
+        if (!messageDiv || messageDiv.querySelector('.feedback-container')) return;
+
+        const messageContent = messageDiv.querySelector('.message-content');
+        if (!messageContent) return;
+
+        const feedbackDiv = document.createElement('div');
+        feedbackDiv.className = 'feedback-container';
+        feedbackDiv.dataset.messageId = meta.messageId;
+
+        const label = document.createElement('div');
+        label.className = 'feedback-label';
+        label.textContent = 'Rate this response (1 = poor, 5 = excellent)';
+
+        const scaleDiv = document.createElement('div');
+        scaleDiv.className = 'feedback-scale';
+
+        const status = document.createElement('div');
+        status.className = 'feedback-status';
+
+        let selectedRating = 0;
+
+        for (let rating = 1; rating <= 5; rating += 1) {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'feedback-rating-btn';
+            button.textContent = String(rating);
+            button.title = `Rate ${rating} out of 5`;
+            button.addEventListener('click', () => {
+                selectedRating = rating;
+                scaleDiv.querySelectorAll('.feedback-rating-btn').forEach((btn) => {
+                    btn.classList.toggle('selected', Number(btn.textContent) <= rating);
+                });
+                status.textContent = `Selected: ${rating}/5 — add an optional note, then submit`;
+            });
+            scaleDiv.appendChild(button);
+        }
+
+        const commentInput = document.createElement('textarea');
+        commentInput.className = 'feedback-comment';
+        commentInput.placeholder = 'Optional: what was helpful or missing?';
+        commentInput.rows = 2;
+
+        const actions = document.createElement('div');
+        actions.className = 'feedback-actions';
+
+        const submitButton = document.createElement('button');
+        submitButton.type = 'button';
+        submitButton.className = 'feedback-submit-btn';
+        submitButton.textContent = 'Submit feedback';
+
+        submitButton.addEventListener('click', async () => {
+            if (!selectedRating) {
+                status.textContent = 'Please select a rating from 1 to 5.';
+                status.classList.add('error');
+                return;
+            }
+
+            submitButton.disabled = true;
+            status.classList.remove('error');
+            status.textContent = 'Saving feedback...';
+
+            const result = await submitFeedback({
+                context_id: currentContextId,
+                message_id: meta.messageId,
+                query: meta.query,
+                response: meta.response,
+                citations: meta.citations,
+                rating: selectedRating,
+                comment: commentInput.value.trim() || null,
+                source: 'kubeflow-docs-bot'
+            });
+
+            if (result.ok) {
+                status.textContent = 'Thank you — feedback saved for golden dataset review.';
+                status.classList.add('success');
+                scaleDiv.querySelectorAll('.feedback-rating-btn').forEach((btn) => {
+                    btn.disabled = true;
+                });
+                commentInput.disabled = true;
+            } else if (result.error === 'not_configured') {
+                status.textContent = 'Feedback API not configured on this site.';
+                status.classList.add('error');
+                submitButton.disabled = false;
+            } else {
+                status.textContent = 'Could not save feedback. Please try again later.';
+                status.classList.add('error');
+                submitButton.disabled = false;
+            }
+        });
+
+        actions.appendChild(submitButton);
+        feedbackDiv.appendChild(label);
+        feedbackDiv.appendChild(scaleDiv);
+        feedbackDiv.appendChild(commentInput);
+        feedbackDiv.appendChild(actions);
+        feedbackDiv.appendChild(status);
+        messageContent.appendChild(feedbackDiv);
         scrollToBottom();
     }
 

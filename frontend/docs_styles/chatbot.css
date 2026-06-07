@@ -552,6 +552,128 @@ body.chatbot-open {
     background: rgba(99, 102, 241, 0.1);
 }
 
+.citations-content {
+    display: none;
+    padding: 8px 12px 12px;
+}
+
+.citations-content.expanded {
+    display: block;
+}
+
+.citations-header {
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.citations-toggle.expanded {
+    transform: rotate(180deg);
+}
+
+.citations-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.citations-list li {
+    margin: 4px 0;
+}
+
+/* Feedback */
+.feedback-container {
+    margin-top: 14px;
+    padding: 12px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.55);
+    border: 1px solid rgba(99, 102, 241, 0.15);
+}
+
+.feedback-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 8px;
+}
+
+.feedback-scale {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.feedback-rating-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    background: white;
+    color: #4338ca;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.feedback-rating-btn:hover {
+    border-color: #6366f1;
+    transform: translateY(-1px);
+}
+
+.feedback-rating-btn.selected {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+    border-color: transparent;
+}
+
+.feedback-comment {
+    width: 100%;
+    box-sizing: border-box;
+    border-radius: 10px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    padding: 8px 10px;
+    font-family: inherit;
+    font-size: 13px;
+    resize: vertical;
+    min-height: 52px;
+    margin-bottom: 10px;
+}
+
+.feedback-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.feedback-submit-btn {
+    border: none;
+    border-radius: 10px;
+    padding: 8px 14px;
+    background: #6366f1;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.feedback-submit-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.feedback-status {
+    margin-top: 8px;
+    font-size: 12px;
+    color: #64748b;
+}
+
+.feedback-status.success {
+    color: #15803d;
+}
+
+.feedback-status.error {
+    color: #b91c1c;
+}
+
 @media (max-width: 768px) {
     .chatbot-container {
         width: 100vw;
