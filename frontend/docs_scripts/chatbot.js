@@ -222,10 +222,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Helper to generate UUIDs for KAgent
     function generateUUID() {
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
-        });
+        return crypto.randomUUID();
     }
 
     // State - TODO 1: Add chat stack state management ✅
@@ -482,7 +479,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // API Configuration — override for kubeflow.org, Vercel, or custom ingress:
     //   window.KUBEFLOW_DOCS_AGENT_URL = 'https://your-host/a2a/docs-agent/kubeflow-docs-agent'
-    // or <script src="chatbot.js" data-agent-url="https://..."> 
+    // or <script src="chatbot.js" data-agent-url="https://...">
     // or data-agent-base="http://LOAD_BALANCER_IP" (appends default A2A path below)
     const KAGENT_A2A_PATH = '/a2a/docs-agent/kubeflow-docs-agent';
 
