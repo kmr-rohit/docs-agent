@@ -18,7 +18,7 @@ try:
 except ImportError:  # pragma: no cover
     k8s = None
 
-from utils import DEFAULT_EMBEDDING_BATCH_SIZE
+from utils import DEFAULT_EMBEDDING_BATCH_SIZE, ISSUES_COLLECTION
 
 @dsl.component(
     base_image="docker.io/library/python:3.9",
@@ -485,7 +485,7 @@ def github_issues_rag_pipeline(
     embedding_batch_size: int = DEFAULT_EMBEDDING_BATCH_SIZE,
     milvus_host: str = "milvus-milvus.ml-infra.svc.cluster.local",
     milvus_port: str = "19530",
-    collection_name: str = "issues_rag",
+    collection_name: str = ISSUES_COLLECTION,
 ):
     download_task = download_github_issues(
         repos=repos,

@@ -20,6 +20,8 @@ The MCP server at `docs-agent-mcp/mcp-server/server.py` is the main thing to val
 | `search_github_issues` | `issues_rag` | Populated and loaded |
 | `search_kubeflow_code` | `code_rag` | Collection may exist with **0** entities until the code ingestion pipeline is rerun |
 
+Milvus collection names use **underscores** (`docs_rag`, not `docs-rag` — hyphens are invalid in Milvus). Canonical constants: `docs-agent-mcp/pipelines/utils.py` and `docs-agent-mcp/mcp-server/rag_collections.py`.
+
 The server uses FastMCP with `streamable-http` transport on port 8000. The MCP endpoint is at `/mcp`. The checked-in `docs-agent-mcp/mcp-server/server.py` may lag the cluster image (for example, additional tools); validate with `tools/list` against the live deployment.
 
 ### Code change → validation loop

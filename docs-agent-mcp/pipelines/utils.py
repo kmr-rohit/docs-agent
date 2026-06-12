@@ -8,6 +8,11 @@ from typing import Sequence
 
 import requests
 
+# Milvus collection names (underscores only — hyphens are invalid in Milvus).
+DOCS_COLLECTION = "docs_rag"
+ISSUES_COLLECTION = "issues_rag"
+CODE_COLLECTION = "code_rag"
+
 DEFAULT_EMBEDDINGS_URL = (
     "http://embeddings-service-predictor.ml-infra.svc.cluster.local/embed"
 )

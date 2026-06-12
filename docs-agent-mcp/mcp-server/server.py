@@ -5,14 +5,15 @@ import threading
 from fastmcp import FastMCP
 from pymilvus import MilvusClient
 
+from rag_collections import CODE_COLLECTION, DOCS_COLLECTION, ISSUES_COLLECTION
 from embeddings_client import embed_query
 
 MILVUS_URI = os.getenv("MILVUS_URI", "http://milvus-milvus.ml-infra.svc.cluster.local:19530")
 MILVUS_USER = os.getenv("MILVUS_USER", "root")
 MILVUS_PASSWORD = os.getenv("MILVUS_PASSWORD", "")
-COLLECTION_NAME = os.getenv("COLLECTION_NAME", "docs_rag")
-ISSUES_COLLECTION_NAME = os.getenv("ISSUES_COLLECTION_NAME", "issues_rag")
-CODE_COLLECTION_NAME = os.getenv("CODE_COLLECTION_NAME", "code_rag")
+COLLECTION_NAME = os.getenv("COLLECTION_NAME", DOCS_COLLECTION)
+ISSUES_COLLECTION_NAME = os.getenv("ISSUES_COLLECTION_NAME", ISSUES_COLLECTION)
+CODE_COLLECTION_NAME = os.getenv("CODE_COLLECTION_NAME", CODE_COLLECTION)
 EMBEDDINGS_URL = os.getenv("EMBEDDINGS_URL", "")
 PORT = int(os.getenv("PORT", "8000"))
 

@@ -4,6 +4,8 @@ Port-forward must be active: kubectl port-forward svc/ml-pipeline 8888:8888 -n k
 """
 import kfp
 
+from utils import DOCS_COLLECTION
+
 KFP_HOST = "http://localhost:8888"
 PIPELINE_YAML = "github_rag_pipeline.yaml"
 
@@ -20,7 +22,7 @@ run = client.create_run_from_pipeline_package(
         "chunk_size":       1000,
         "chunk_overlap":    100,
         "milvus_uri":       "http://milvus-milvus.ml-infra.svc.cluster.local:19530",
-        "collection_name":  "docs_rag",
+        "collection_name":  DOCS_COLLECTION,
     },
     run_name="kubeflow-docs-rag-run-1",
     experiment_name="kubeflow-docs-rag",

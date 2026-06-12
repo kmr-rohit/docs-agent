@@ -8,7 +8,7 @@ try:
 except ImportError:  # pragma: no cover
     k8s = None
 
-from utils import DEFAULT_EMBEDDING_BATCH_SIZE
+from utils import CODE_COLLECTION, DEFAULT_EMBEDDING_BATCH_SIZE
 
 @dsl.component(
     base_image="docker.io/python:3.9",
@@ -561,7 +561,7 @@ def code_rag_pipeline(
     embedding_batch_size: int = DEFAULT_EMBEDDING_BATCH_SIZE,
     milvus_host: str = "milvus-milvus.ml-infra.svc.cluster.local",
     milvus_port: str = "19530",
-    collection_name: str = "code_rag",
+    collection_name: str = CODE_COLLECTION,
 ):
     download_task = download_github_code(
         repos=repos,
