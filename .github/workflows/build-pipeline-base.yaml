@@ -1,0 +1,30 @@
+# Upstream (Santhosh #207) pipeline-base image build — Docker Hub.
+# This fork uses GHCR via .github/workflows/oke-cicd.yaml instead.
+# Manual dispatch only; does not run on push (avoids failing PR checks without DOCKERHUB_* secrets).
+
+name: Build Pipeline Base Image
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-and-push:
+    if: ${{ vars.ENABLE_DOCKERHUB_WORKFLOWS == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: docs-agent-mcp/pipelines
+          file: docs-agent-mcp/pipelines/Dockerfile.pipeline
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/kubeflow-pipeline-base:latest

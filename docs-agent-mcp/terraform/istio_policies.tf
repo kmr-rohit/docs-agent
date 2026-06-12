@@ -166,7 +166,7 @@ spec:
   rules:
   - from:
     - source:
-        namespaces: ["kubeflow", "istio-system"]
+        namespaces: ["kubeflow"]
     to:
     - operation:
         ports: ["19530"]
@@ -175,7 +175,9 @@ YAML
   depends_on = [helm_release.istiod, kubernetes_namespace.ml_infra]
 }
 
-# Allow docs-agent/mcp-server -> ml-infra/embeddings-service (TEI)
+# --- Allow traffic to embeddings-service ---
+
+# Allow docs-agent/mcp-server -> ml-infra/embeddings-service
 resource "kubectl_manifest" "istio_allow_mcp_to_embeddings" {
   yaml_body = <<YAML
 apiVersion: security.istio.io/v1beta1
