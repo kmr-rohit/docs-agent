@@ -1,12 +1,13 @@
 name: Compile and Run KFP Pipeline
 
+# Upstream weekly KFP ingest — needs Docker Hub + OKE_CLUSTER_ID secrets.
+# This fork uses GHCR/oke-cicd for deploy; disable scheduled runs unless explicitly enabled.
 on:
-  workflow_dispatch: # Allows manual trigger from GitHub UI
-  schedule:
-    - cron: '0 0 * * 0' # Run automatically weekly on Sunday at midnight
+  workflow_dispatch:
 
 jobs:
   run-pipeline:
+    if: ${{ vars.ENABLE_DOCKERHUB_WORKFLOWS == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
