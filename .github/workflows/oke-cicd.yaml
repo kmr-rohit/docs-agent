@@ -1,3 +1,5 @@
+# Test + optional OKE CD. PRs and main always run compile/test/lint.
+# Deploy job runs only when repository variable ENABLE_OKE_DEPLOY=true (set on operator forks).
 name: Build, Test, and Deploy to OKE
 
 on:
@@ -57,7 +59,10 @@ jobs:
   build-and-deploy:
     name: Build, Push, and Deploy to OKE
     needs: test-and-compile
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    # Off by default in kubeflow/docs-agent (no OKE secrets). Fork operators set repo variable ENABLE_OKE_DEPLOY=true.
+    if: |
+      (github.event_name == 'workflow_dispatch' || github.event_name == 'push') &&
+      vars.ENABLE_OKE_DEPLOY == 'true'
     runs-on: ubuntu-latest
     # Secrets are stored under Settings → Environments → kubeflow (not repo secrets)
     environment: kubeflow
