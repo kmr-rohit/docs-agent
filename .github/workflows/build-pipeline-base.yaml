@@ -1,14 +1,15 @@
+# Upstream (Santhosh #207) pipeline-base image build — Docker Hub.
+# This fork uses GHCR via .github/workflows/oke-cicd.yaml instead.
+# Manual dispatch only; does not run on push (avoids failing PR checks without DOCKERHUB_* secrets).
+
 name: Build Pipeline Base Image
 
 on:
-  push:
-    paths:
-      - 'docs-agent-mcp/pipelines/Dockerfile.pipeline'
-      - '.github/workflows/build-pipeline-base.yaml'
-  workflow_dispatch: # Allows manual trigger
+  workflow_dispatch:
 
 jobs:
   build-and-push:
+    if: ${{ vars.ENABLE_DOCKERHUB_WORKFLOWS == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
