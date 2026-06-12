@@ -48,7 +48,7 @@ When code changes are made to the MCP server:
 
 **Kagent CRDs vs the container image:** `RemoteMCPServer` and `Agent` in `docs-agent-mcp/manifests/kagent/setup.yaml` point at the **Kubernetes Service URL** (for example `http://mcp-kubeflow-docs.docs-agent.svc.cluster.local:8000/mcp`). When you only change MCP server code, you update the **`Deployment` image** (`mcp-kubeflow-docs`); you do **not** need to edit those CRDs unless you rename the Service, change the port, or change the path. If you reuse a fixed tag like `latest` and push a new digest, ensure `imagePullPolicy: Always` or bump the tag so nodes pull the new image.
 
-The CI workflow at `.github/workflows/build-mcp-image.yml` automatically builds and pushes to GHCR on pushes to `main` that touch `docs-agent-mcp/mcp-server/**`.
+The CI workflow at `.github/workflows/oke-cicd.yaml` builds and pushes the MCP image to GHCR on pushes to `main` when `ENABLE_OKE_DEPLOY=true` (deploy job); the test job runs on every PR and push.
 
 ### Cursor Cloud secrets: autonomous `docker push` + OKE validation
 

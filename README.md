@@ -744,8 +744,7 @@ The ingestion pipeline was rewritten to maximize efficiency and avoid Kubernetes
 ### GitHub Actions CI/CD (`.github/workflows/`)
 | Workflow | When it runs | Purpose |
 |----------|----------------|---------|
-| **`oke-cicd.yaml`** | Every PR and push to `main` | Compile pipelines, ruff, pytest; optional OKE deploy when repo var `ENABLE_OKE_DEPLOY=true` |
+| **`oke-cicd.yaml`** | Every PR and push to `main` | Compile pipelines, ruff, pytest; build/push MCP image to GHCR and optional OKE deploy when repo var `ENABLE_OKE_DEPLOY=true` |
 | **`tests.yml`** | Every PR and push to `main` | Ruff lint/format + pytest (no cluster) |
-| **`build-mcp-image.yml`** | Push to `main` touching `mcp-server/**` | Multi-arch GHCR image build |
 
 Operator forks set `ENABLE_OKE_DEPLOY=true` and configure the `kubeflow` GitHub Environment (OCI + GHCR secrets) for cluster deploy and `smoke_tools.py` validation.
