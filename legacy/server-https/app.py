@@ -18,10 +18,9 @@ PORT = int(os.getenv("PORT", "8000"))
 # Milvus Config
 MILVUS_HOST = os.getenv("MILVUS_HOST", "my-release-milvus.docs-agent.svc.cluster.local")
 MILVUS_PORT = os.getenv("MILVUS_PORT", "19530")
-MILVUS_COLLECTION = os.getenv("MILVUS_COLLECTION", "kubeflow_docs")
+MILVUS_COLLECTION = os.getenv("MILVUS_COLLECTION", "docs_rag")
 MILVUS_VECTOR_FIELD = os.getenv("MILVUS_VECTOR_FIELD", "vector")
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "sentence-transformers/all-mpnet-base-v2")
-LLM_API_KEY = os.getenv("LLM_API_KEY", "")
 
 # System prompt (same as WebSocket version)
 SYSTEM_PROMPT = """
@@ -200,12 +199,8 @@ async def stream_llm_response(payload: Dict[str, Any]) -> AsyncGenerator[str, No
     citations_collector = []
     
     try:
-        headers = {}
-        if LLM_API_KEY:
-            headers["Authorization"] = f"Bearer {LLM_API_KEY}"
-
         async with httpx.AsyncClient(timeout=120) as client:
-            async with client.stream("POST", KSERVE_URL, json=payload, headers=headers) as response:
+            async with client.stream("POST", KSERVE_URL, json=payload) as response:
                 if response.status_code != 200:
                     error_msg = f"LLM service error: HTTP {response.status_code}"
                     print(f"[ERROR] {error_msg}")

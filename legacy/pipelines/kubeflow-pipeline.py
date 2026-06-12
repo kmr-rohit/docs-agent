@@ -3,15 +3,8 @@ from kfp import dsl
 from kfp.dsl import *
 from typing import *
 
-try:
-    import kfp.kubernetes as k8s
-except ImportError:  # pragma: no cover - optional at compile time
-    k8s = None
-
-from utils import DEFAULT_EMBEDDING_BATCH_SIZE
-
 @dsl.component(
-    base_image="docker.io/library/python:3.9",
+    base_image="python:3.9",
     packages_to_install=["requests", "beautifulsoup4"]
 )
 def download_github_directory(
@@ -21,84 +14,44 @@ def download_github_directory(
     github_token: str,
     github_data: dsl.Output[dsl.Dataset]
 ):
-    import os
     import requests
     import json
     import base64
-    import time
     from bs4 import BeautifulSoup
 
-    def resolve_github_token(token):
-        for candidate in (token, os.environ.get("Github_Pat"), os.environ.get("GITHUB_TOKEN")):
-            if candidate and str(candidate).strip():
-                return str(candidate).strip()
-        return ""
-
-    github_token = resolve_github_token(github_token)
-    if github_token:
-        print("Using authenticated GitHub API requests")
-    else:
-        print("WARNING: No github_token or Github_Pat env set; rate limits will be low (60 req/hr)")
-
     headers = {"Authorization": f"token {github_token}"} if github_token else {}
-
-    def api_request(url, params=None):
-        max_retries = 3
-        for attempt in range(max_retries):
-            try:
-                resp = requests.get(url, params=params, headers=headers)
-
-                if resp.status_code == 403:
-                    remaining = resp.headers.get("X-RateLimit-Remaining", "0")
-                    if remaining == "0":
-                        reset_time = int(resp.headers.get("X-RateLimit-Reset", 0))
-                        wait_time = max(reset_time - int(time.time()), 60)
-                        print(f"Rate limited. Waiting {wait_time}s...")
-                        time.sleep(min(wait_time, 300))
-                        continue
-                    print(f"Forbidden (403) for {url}: {resp.text[:200]}")
-
-                if resp.status_code == 200:
-                    return resp.json()
-
-                print(f"API error: HTTP {resp.status_code} for {url}")
-                return None
-
-            except Exception as e:
-                print(f"Request failed (attempt {attempt + 1}): {e}")
-                time.sleep(2 ** attempt)
-
-        return None
+    api_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/contents/{directory_path}"
 
     def get_files_recursive(url):
         files = []
-        items = api_request(url)
-        if not items or not isinstance(items, list):
-            return files
+        try:
+            response = requests.get(url, headers=headers)
+            response.raise_for_status()
+            items = response.json()
 
-        for item in items:
-            if item['type'] == 'file' and (item['name'].endswith('.md') or item['name'].endswith('.html')):
-                file_data = api_request(item['url'])
-                if not file_data or 'content' not in file_data:
-                    print(f"Skipping unreadable file: {item['path']}")
-                    continue
-                content = base64.b64decode(file_data['content']).decode('utf-8')
+            for item in items:
+                if item['type'] == 'file' and (item['name'].endswith('.md') or item['name'].endswith('.html')):
+                    file_response = requests.get(item['url'], headers=headers)
+                    file_response.raise_for_status()
+                    file_data = file_response.json()
+                    content = base64.b64decode(file_data['content']).decode('utf-8')
 
-                if item['name'].endswith('.html'):
-                    soup = BeautifulSoup(content, 'html.parser')
-                    content = soup.get_text(separator=' ', strip=True)
+                    # Extract text from HTML files
+                    if item['name'].endswith('.html'):
+                        soup = BeautifulSoup(content, 'html.parser')
+                        content = soup.get_text(separator=' ', strip=True)
 
-                files.append({
-                    'path': item['path'],
-                    'content': content,
-                    'file_name': item['name']
-                })
-            elif item['type'] == 'dir':
-                files.extend(get_files_recursive(item['url']))
-
+                    files.append({
+                        'path': item['path'],
+                        'content': content,
+                        'file_name': item['name']
+                    })
+                elif item['type'] == 'dir':
+                    files.extend(get_files_recursive(item['url']))
+        except Exception as e:
+            print(f"Error fetching {url}: {e}")
         return files
 
-    api_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/contents/{directory_path}"
     files = get_files_recursive(api_url)
     print(f"Downloaded {len(files)} files")
 
@@ -108,7 +61,7 @@ def download_github_directory(
 
 
 @dsl.component(
-    base_image="docker.io/library/python:3.9",
+    base_image="python:3.9",
     packages_to_install=["requests"]
 )
 def download_github_issues(
@@ -132,19 +85,6 @@ def download_github_issues(
     import requests
     import json
     import time
-    import os
-
-    def resolve_github_token(token):
-        for candidate in (token, os.environ.get("Github_Pat"), os.environ.get("GITHUB_TOKEN")):
-            if candidate and str(candidate).strip():
-                return str(candidate).strip()
-        return ""
-
-    github_token = resolve_github_token(github_token)
-    if github_token:
-        print("Using authenticated GitHub API requests")
-    else:
-        print("WARNING: No github_token or Github_Pat env set; rate limits will be low (60 req/hr)")
 
     headers = {"Authorization": f"token {github_token}"} if github_token else {}
     all_issues = []
@@ -274,8 +214,8 @@ def download_github_issues(
 
 
 @dsl.component(
-    base_image="python:3.11-slim",
-    packages_to_install=["requests", "langchain-text-splitters"],
+    base_image="pytorch/pytorch:2.3.0-cuda12.1-cudnn8-runtime",
+    packages_to_install=["sentence-transformers", "langchain"]
 )
 def chunk_and_embed(
     github_data: dsl.Input[dsl.Dataset],
@@ -283,18 +223,18 @@ def chunk_and_embed(
     base_url: str,
     chunk_size: int,
     chunk_overlap: int,
-    embeddings_service_url: str,
-    embedding_batch_size: int,
-    embedded_data: dsl.Output[dsl.Dataset],
+    embedded_data: dsl.Output[dsl.Dataset]
 ):
     import json
     import os
     import re
-    import requests
-    from langchain_text_splitters import RecursiveCharacterTextSplitter
+    import torch
+    from sentence_transformers import SentenceTransformer
+    from langchain.text_splitter import RecursiveCharacterTextSplitter
 
-    print(f"Using embeddings service: {embeddings_service_url}")
-    embedding_batch_size = max(1, int(embedding_batch_size))
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    model = SentenceTransformer('sentence-transformers/all-mpnet-base-v2', device=device)
+    print(f"Model loaded on {device}")
 
     records = []
 
@@ -355,9 +295,11 @@ def chunk_and_embed(
             # Split into chunks
             chunks = text_splitter.split_text(content)
 
-            print(f"File: {file_data['path']} -> {len(chunks)} chunks")
+            print(f"File: {file_data['path']} -> {len(chunks)} chunks (avg: {sum(len(c) for c in chunks)/len(chunks):.0f} chars)")
 
+            # Create embeddings
             for chunk_idx, chunk in enumerate(chunks):
+                embedding = model.encode(chunk).tolist()
                 records.append({
                     'file_unique_id': file_unique_id,
                     'repo_name': repo_name,
@@ -366,27 +308,10 @@ def chunk_and_embed(
                     'citation_url': citation_url[:1024],
                     'chunk_index': chunk_idx,
                     'content_text': chunk[:2000],
+                    'embedding': embedding
                 })
 
-    print(f"Created {len(records)} chunks; requesting embeddings from TEI service...")
-
-    # TEI all-mpnet-base-v2 rejects any input >=384 tokens (~1000 chars).
-    max_tei_chars = 1000
-    for i in range(0, len(records), embedding_batch_size):
-        batch = records[i:i + embedding_batch_size]
-        texts = [r["content_text"][:max_tei_chars] for r in batch]
-        response = requests.post(
-            embeddings_service_url,
-            json={"inputs": texts},
-            headers={"Content-Type": "application/json"},
-            timeout=120,
-        )
-        response.raise_for_status()
-        vectors = response.json()
-        for idx, vector in enumerate(vectors):
-            batch[idx]["embedding"] = vector
-
-    print(f"Embedded {len(records)} chunks")
+    print(f"Created {len(records)} total chunks")
 
     with open(embedded_data.path, 'w', encoding='utf-8') as f:
         for record in records:
@@ -394,7 +319,7 @@ def chunk_and_embed(
 
 
 @dsl.component(
-    base_image="docker.io/library/python:3.9",
+    base_image="python:3.9",
     packages_to_install=["pymilvus", "numpy"]
 )
 def store_milvus(
@@ -405,26 +330,16 @@ def store_milvus(
 ):
     from pymilvus import connections, utility, FieldSchema, CollectionSchema, DataType, Collection
     import json
-    import os
     from datetime import datetime
 
-    SCHEMA_VERSION = 1
-    SCHEMA_DESCRIPTION = f"RAG collection for documentation (v={SCHEMA_VERSION})"
-    DELETE_BATCH_SIZE = 100
+    connections.connect("default", host=milvus_host, port=milvus_port)
 
-    milvus_user = os.environ.get("MILVUS_USER", "root")
-    milvus_password = os.environ.get("MILVUS_PASSWORD", "")
-    if not milvus_password:
-        raise RuntimeError("MILVUS_PASSWORD must be set via pipeline secret (not in source code)")
+    # DROP existing collection to fix schema mismatch
+    if utility.has_collection(collection_name):
+        utility.drop_collection(collection_name)
+        print(f"Dropped existing collection: {collection_name}")
 
-    connections.connect(
-        "default",
-        host=milvus_host,
-        port=milvus_port,
-        user=milvus_user,
-        password=milvus_password,
-    )
-
+    # Enhanced schema with 768 dimensions
     fields = [
         FieldSchema(name="id", dtype=DataType.INT64, is_primary=True, auto_id=True),
         FieldSchema(name="file_unique_id", dtype=DataType.VARCHAR, max_length=512),
@@ -434,26 +349,14 @@ def store_milvus(
         FieldSchema(name="citation_url", dtype=DataType.VARCHAR, max_length=1024),
         FieldSchema(name="chunk_index", dtype=DataType.INT64),
         FieldSchema(name="content_text", dtype=DataType.VARCHAR, max_length=2000),
-        FieldSchema(name="vector", dtype=DataType.FLOAT_VECTOR, dim=768),
+        FieldSchema(name="vector", dtype=DataType.FLOAT_VECTOR, dim=768),  # Updated for all-mpnet-base-v2
         FieldSchema(name="last_updated", dtype=DataType.INT64)
     ]
 
-    schema = CollectionSchema(fields, SCHEMA_DESCRIPTION)
-
-    collection_existed = utility.has_collection(collection_name)
-    if collection_existed:
-        collection = Collection(collection_name)
-        existing_desc = collection.description or ""
-        if f"v={SCHEMA_VERSION}" not in existing_desc:
-            raise RuntimeError(
-                f"Schema version mismatch for {collection_name}. "
-                f"Expected v={SCHEMA_VERSION}, found description: '{existing_desc}'. "
-                f"Run a migration job to drop+recreate before re-indexing."
-            )
-        print(f"Using existing collection: {collection_name} (schema v={SCHEMA_VERSION})")
-    else:
-        collection = Collection(collection_name, schema)
-        print(f"Created new collection: {collection_name} (schema v={SCHEMA_VERSION})")
+    # Create new collection with correct schema
+    schema = CollectionSchema(fields, "RAG collection for documentation")
+    collection = Collection(collection_name, schema)
+    print(f"Created new collection: {collection_name}")
 
     # Rest of your existing code remains the same...
     records = []
@@ -475,53 +378,22 @@ def store_milvus(
             })
 
     if records:
-        # load() before delete requires an existing index; new collections have none yet
-        if collection_existed and len(collection.indexes) > 0:
-            collection.load()
-            unique_ids = sorted(set(r["file_unique_id"] for r in records))
-            deleted = 0
-            try:
-                for i in range(0, len(unique_ids), DELETE_BATCH_SIZE):
-                    batch_ids = unique_ids[i:i + DELETE_BATCH_SIZE]
-                    quoted = ", ".join(f'"{uid}"' for uid in batch_ids)
-                    expr = f"file_unique_id in [{quoted}]"
-                    old = collection.query(expr=expr, output_fields=["id"], limit=16384)
-                    if old:
-                        collection.delete(expr)
-                        deleted += len(old)
-                if deleted:
-                    collection.flush()
-                    print(f"Deleted {deleted} old chunks for {len(unique_ids)} files")
-            except Exception as e:
-                print(f"ERROR during delete phase: {e}")
-                print(f"Failed batch unique_ids: {unique_ids[i:i + DELETE_BATCH_SIZE]}")
-                raise
-
-        # Insert new chunks (failure-aware)
         batch_size = 1000
-        inserted = 0
-        try:
-            for i in range(0, len(records), batch_size):
-                batch = records[i:i + batch_size]
-                collection.insert(batch)
-                inserted += len(batch)
-            collection.flush()
-        except Exception as e:
-            print(f"ERROR during insert. Inserted={inserted}/{len(records)}. Error: {e}")
-            failed_ids = sorted(set(r["file_unique_id"] for r in records[i:i + batch_size]))
-            print(f"Failed batch starts at record {i}, file_unique_ids in failing batch: {failed_ids}")
-            raise
+        for i in range(0, len(records), batch_size):
+            batch = records[i:i + batch_size]
+            collection.insert(batch)
 
-        # Create index if not already present
-        if not collection.has_index():
-            index_params = {
-                "metric_type": "COSINE",
-                "index_type": "IVF_FLAT",
-                "params": {"nlist": min(1024, len(records))}
-            }
-            collection.create_index("vector", index_params, timeout=120)
+        collection.flush()
+
+        # Create index
+        index_params = {
+            "metric_type": "COSINE",
+            "index_type": "IVF_FLAT", 
+            "params": {"nlist": min(1024, len(records))}
+        }
+        collection.create_index("vector", index_params)
         collection.load()
-        print(f"Inserted {len(records)} records. Total: {collection.num_entities}")
+        print(f"✅ Inserted {len(records)} records. Total: {collection.num_entities}")
 
 
 @dsl.pipeline(
@@ -531,18 +403,14 @@ def store_milvus(
 def github_rag_pipeline(
     repo_owner: str = "kubeflow",
     repo_name: str = "website", 
-    directory_path: str = "content/en/docs",
+    directory_path: str = "content/en",
     github_token: str = "",
     base_url: str = "https://www.kubeflow.org/docs",
     chunk_size: int = 1000,
     chunk_overlap: int = 100,
-    embeddings_service_url: str = (
-        "http://embeddings-service-predictor.ml-infra.svc.cluster.local/embed"
-    ),
-    embedding_batch_size: int = DEFAULT_EMBEDDING_BATCH_SIZE,
-    milvus_host: str = "milvus-milvus.ml-infra.svc.cluster.local",
+    milvus_host: str = "milvus-standalone-final.docs-agent.svc.cluster.local",
     milvus_port: str = "19530",
-    collection_name: str = "kubeflow_docs",
+    collection_name: str = "docs_rag"
 ):
     # Download GitHub directory
     download_task = download_github_directory(
@@ -551,13 +419,6 @@ def github_rag_pipeline(
         directory_path=directory_path,
         github_token=github_token
     )
-
-    if k8s is not None:
-        k8s.use_secret_as_env(
-            download_task,
-            secret_name="github-pat",
-            secret_key_to_env={"Github_Pat": "Github_Pat"},
-        )
     
     # Chunk and embed the content
     chunk_task = chunk_and_embed(
@@ -565,9 +426,7 @@ def github_rag_pipeline(
         repo_name=repo_name,
         base_url=base_url,
         chunk_size=chunk_size,
-        chunk_overlap=chunk_overlap,
-        embeddings_service_url=embeddings_service_url,
-        embedding_batch_size=embedding_batch_size,
+        chunk_overlap=chunk_overlap
     )
     
     # Store in Milvus
@@ -575,18 +434,8 @@ def github_rag_pipeline(
         embedded_data=chunk_task.outputs["embedded_data"],
         milvus_host=milvus_host,
         milvus_port=milvus_port,
-        collection_name=collection_name,
+        collection_name=collection_name
     )
-
-    if k8s is not None:
-        k8s.use_secret_as_env(
-            store_task,
-            secret_name="milvus-auth",
-            secret_key_to_env={
-                "MILVUS_USER": "MILVUS_USER",
-                "MILVUS_PASSWORD": "MILVUS_PASSWORD",
-            },
-        )
 
 
 if __name__ == "__main__":

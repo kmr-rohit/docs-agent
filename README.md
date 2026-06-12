@@ -742,8 +742,10 @@ The ingestion pipeline was rewritten to maximize efficiency and avoid Kubernetes
 *   **Custom Base Image (`Dockerfile.pipeline`)**: We bake the massive PyTorch library and the Hugging Face `all-mpnet-base-v2` model directly into a custom Docker image. This reduces runtime disk usage from 5.5GB to zero, fixing OKE pod eviction errors, and preventing Hugging Face API rate limits.
 
 ### GitHub Actions CI/CD (`.github/workflows/`)
-The repository is fully automated via CI/CD, securely connecting to the OKE cluster using temporary OCI tokens:
-*   **`build-pipeline-base.yaml`**: Automatically builds and pushes the custom pipeline Docker image when `Dockerfile.pipeline` is updated.
-*   **`run-pipeline.yaml`**: A weekly scheduled (and manually triggerable) workflow that compiles the Kubeflow Pipeline and submits the run to the cluster via KFP API port-forwarding.
-*   **`deploy-mcp.yaml`**: Builds the MCP Server Docker image, pushes it to Docker Hub, and applies it to the OKE cluster.
-*   **`deploy-agent.yaml`**: Continuously deploys your `kagent` custom resources (`setup.yaml`) to update the AI agent's configuration.
+| Workflow | When it runs | Purpose |
+|----------|----------------|---------|
+| **`oke-cicd.yaml`** | Every PR and push to `main` | Compile pipelines, ruff, pytest; optional OKE deploy when repo var `ENABLE_OKE_DEPLOY=true` |
+| **`tests.yml`** | Every PR and push to `main` | Ruff lint/format + pytest (no cluster) |
+| **`build-mcp-image.yml`** | Push to `main` touching `mcp-server/**` | Multi-arch GHCR image build |
+
+Operator forks set `ENABLE_OKE_DEPLOY=true` and configure the `kubeflow` GitHub Environment (OCI + GHCR secrets) for cluster deploy and `smoke_tools.py` validation.
