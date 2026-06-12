@@ -256,7 +256,9 @@ All components share a virtualenv at `/workspace/.venv`. Activate with `source /
 | `MILVUS_USER` | `root` | Milvus username |
 | `MILVUS_PASSWORD` | *(required, from secret)* | Milvus password — never in ConfigMap |
 | `EMBEDDINGS_URL` | `http://embeddings-service-predictor.ml-infra.svc.cluster.local/embed` | TEI embeddings service |
-| `COLLECTION_NAME` | `kubeflow_docs_docs_rag` | Milvus collection name |
+| `COLLECTION_NAME` | `docs_rag` | Docs Milvus collection |
+| `ISSUES_COLLECTION_NAME` | `issues_rag` | GitHub issues collection |
+| `CODE_COLLECTION_NAME` | `code_rag` | Kubeflow code collection |
 | `PORT` | `8000` | Server listen port |
 
 ### Important caveats

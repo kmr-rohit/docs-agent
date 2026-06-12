@@ -15,6 +15,7 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: mcp-kubeflow-docs
+  FEEDBACK_IMAGE_NAME: docs-feedback
   K8S_NAMESPACE: docs-agent
   OKE_CLUSTER_OCID: ${{ secrets.OKE_CLUSTER_OCID }}
 
@@ -112,6 +113,7 @@ jobs:
           owner_lc="$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')"
           ghcr_user="${GHCR_USERNAME:-$owner_lc}"
           echo "IMAGE_REPO=ghcr.io/${owner_lc}/${{ env.IMAGE_NAME }}" >> "$GITHUB_ENV"
+          echo "FEEDBACK_IMAGE_REPO=ghcr.io/${owner_lc}/${{ env.FEEDBACK_IMAGE_NAME }}" >> "$GITHUB_ENV"
           echo "GHCR_USERNAME=${ghcr_user}" >> "$GITHUB_ENV"
           echo "tag=${GITHUB_SHA::7}" >> "$GITHUB_ENV"
 
@@ -132,6 +134,16 @@ jobs:
             ${{ env.IMAGE_REPO }}:${{ env.tag }}
             ${{ env.IMAGE_REPO }}:latest
 
+      - name: Build and Push Feedback Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./docs-agent-mcp/feedback-service
+          file: ./docs-agent-mcp/feedback-service/Dockerfile
+          push: true
+          tags: |
+            ${{ env.FEEDBACK_IMAGE_REPO }}:${{ env.tag }}
+            ${{ env.FEEDBACK_IMAGE_REPO }}:latest
+
       - name: Configure kubectl for OKE
         uses: oracle-actions/configure-kubectl-oke@v1.5.0
         with:
@@ -140,6 +152,7 @@ jobs:
       - name: Deploy to OKE
         env:
           FULL_IMAGE: ${{ env.IMAGE_REPO }}:${{ env.tag }}
+          FEEDBACK_IMAGE: ${{ env.FEEDBACK_IMAGE_REPO }}:${{ env.tag }}
           GHCR_PULL_TOKEN: ${{ secrets.GHCR_TOKEN || secrets.GHCR_PULL_TOKEN || secrets.Github_Pat }}
           GHCR_USERNAME: ${{ env.GHCR_USERNAME }}
         run: |
@@ -165,6 +178,14 @@ jobs:
             -p '{"spec":{"template":{"spec":{"imagePullSecrets":[{"name":"ghcrsecret"}]}}}}'
           kubectl rollout status deployment/mcp-kubeflow-docs \
             -n "${{ env.K8S_NAMESPACE }}" --timeout=600s
+
+          sed "s|ghcr.io/OWNER/docs-feedback:latest|${FEEDBACK_IMAGE}|g" \
+            docs-agent-mcp/manifests/feedback-service/feedback-service.yaml | kubectl apply -f -
+          kubectl set image deployment/docs-feedback \
+            feedback-api="${FEEDBACK_IMAGE}" \
+            -n "${{ env.K8S_NAMESPACE }}" || true
+          kubectl rollout status deployment/docs-feedback \
+            -n "${{ env.K8S_NAMESPACE }}" --timeout=300s
 
           kubectl apply -f docs-agent-mcp/manifests/kagent/setup.yaml
 

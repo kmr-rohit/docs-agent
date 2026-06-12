@@ -38,6 +38,8 @@ spec:
       labels:
         app: docs-feedback
     spec:
+      imagePullSecrets:
+        - name: ghcrsecret
       containers:
         - name: feedback-api
           image: ghcr.io/OWNER/docs-feedback:latest
