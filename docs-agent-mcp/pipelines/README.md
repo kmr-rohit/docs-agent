@@ -97,7 +97,7 @@ python kubeflow-pipeline.py
 </tr>
 <tr>
 <td><code>collection_name</code></td>
-<td>"docs_rag"</td>
+<td>"kubeflow_docs"</td>
 <td>Milvus collection name</td>
 </tr>
 </tbody>
@@ -219,7 +219,7 @@ kfp.compiler.Compiler().compile(
 </tr>
 <tr>
 <td><code>collection_name</code></td>
-<td>"docs_rag"</td>
+<td>"kubeflow_docs"</td>
 <td>Milvus collection name</td>
 </tr>
 </tbody>
@@ -329,7 +329,7 @@ for component in run.run.pipeline_spec.components:
 from pymilvus import connections, Collection
 
 connections.connect("default", host="your-milvus-host", port="19530")
-collection = Collection("docs_rag")
+collection = Collection("kubeflow_docs")
 
 # Check total count
 print(f"Total vectors: {collection.num_entities}")

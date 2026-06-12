@@ -587,7 +587,7 @@ if data.get('citations'):
 </tr>
 <tr>
 <td><code>MILVUS_COLLECTION</code></td>
-<td><code>docs_rag</code></td>
+<td><code>kubeflow_docs</code></td>
 <td>Milvus collection name</td>
 </tr>
 <tr>

@@ -4,7 +4,7 @@ metadata:
   name: mcp-server-config
   namespace: docs-agent
 data:
-  COLLECTION_NAME: docs_rag
+  COLLECTION_NAME: kubeflow_docs
   ISSUES_COLLECTION_NAME: issues_rag
   CODE_COLLECTION_NAME: code_rag
   EMBEDDINGS_URL: http://embeddings-service-predictor.ml-infra.svc.cluster.local/embed

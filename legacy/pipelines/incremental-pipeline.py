@@ -375,7 +375,7 @@ def github_rag_incremental_pipeline(
     chunk_overlap: int = 100,
     milvus_host: str = "milvus-milvus.ml-infra.svc.cluster.local",
     milvus_port: str = "19530",
-    collection_name: str = "docs_rag"
+    collection_name: str = "kubeflow_docs"
 ):
     # Step 1: Delete old vectors for changed files
     delete_task = delete_old_vectors(

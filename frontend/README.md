@@ -46,6 +46,6 @@ CORS: browser calls require the agent host to allow your Vercel origin. Default 
 
 | Tool | Collection |
 |------|------------|
-| Docs | `docs_rag` |
+| Docs | `kubeflow_docs` |
 | Issues | `issues_rag` |
 | Code | `code_rag` |

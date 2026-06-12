@@ -6,7 +6,7 @@
 #    changed_files: str [Default: '[]']
 #    chunk_overlap: int [Default: 100.0]
 #    chunk_size: int [Default: 1200.0]
-#    collection_name: str [Default: 'docs_rag']
+#    collection_name: str [Default: 'kubeflow_docs']
 #    github_token: str [Default: '']
 #    milvus_host: str [Default: 'milvus-standalone-final.docs-agent.svc.cluster.local']
 #    milvus_port: str [Default: '19530']
@@ -468,7 +468,7 @@ root:
         isOptional: true
         parameterType: NUMBER_INTEGER
       collection_name:
-        defaultValue: docs_rag
+        defaultValue: kubeflow_docs
         isOptional: true
         parameterType: STRING
       github_token:

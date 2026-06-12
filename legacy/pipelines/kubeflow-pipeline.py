@@ -542,7 +542,7 @@ def github_rag_pipeline(
     embedding_batch_size: int = DEFAULT_EMBEDDING_BATCH_SIZE,
     milvus_host: str = "milvus-milvus.ml-infra.svc.cluster.local",
     milvus_port: str = "19530",
-    collection_name: str = "docs_rag",
+    collection_name: str = "kubeflow_docs",
 ):
     # Download GitHub directory
     download_task = download_github_directory(

@@ -434,7 +434,7 @@ def store_code_milvus(
         password=milvus_password,
     )
 
-    # code_rag schema: docs_rag fields + resource_kind, resource_name,
+    # code_rag schema: kubeflow_docs fields + resource_kind, resource_name,
     # resource_namespace, file_type
     fields = [
         FieldSchema(name="id", dtype=DataType.INT64, is_primary=True, auto_id=True),

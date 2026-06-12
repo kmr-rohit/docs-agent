@@ -3,6 +3,6 @@
 Milvus allows only letters, numbers, and underscores (no hyphens).
 """
 
-DOCS_COLLECTION = "docs_rag"
+DOCS_COLLECTION = "kubeflow_docs"
 ISSUES_COLLECTION = "issues_rag"
 CODE_COLLECTION = "code_rag"

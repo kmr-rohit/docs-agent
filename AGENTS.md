@@ -16,11 +16,11 @@ The MCP server at `docs-agent-mcp/mcp-server/server.py` is the main thing to val
 
 | Tool | Milvus Collection | Status |
 |---|---|---|
-| `search_kubeflow_docs` | `docs_rag` | Populated and loaded |
+| `search_kubeflow_docs` | `kubeflow_docs` | Populated and loaded (matches upstream #207) |
 | `search_github_issues` | `issues_rag` | Populated and loaded |
 | `search_kubeflow_code` | `code_rag` | Collection may exist with **0** entities until the code ingestion pipeline is rerun |
 
-Milvus collection names use **underscores** (`docs_rag`, not `docs-rag` — hyphens are invalid in Milvus). Canonical constants: `docs-agent-mcp/pipelines/utils.py` and `docs-agent-mcp/mcp-server/rag_collections.py`.
+Milvus collection names use **underscores** only (hyphens are invalid in Milvus). Docs collection stays `kubeflow_docs` (upstream #207); issues/code use `issues_rag` and `code_rag`. Constants: `docs-agent-mcp/pipelines/utils.py` and `docs-agent-mcp/mcp-server/rag_collections.py`.
 
 The server uses FastMCP with `streamable-http` transport on port 8000. The MCP endpoint is at `/mcp`. The checked-in `docs-agent-mcp/mcp-server/server.py` may lag the cluster image (for example, additional tools); validate with `tools/list` against the live deployment.
 
@@ -211,7 +211,7 @@ connections.connect(
     user=\"root\",
     password=\"Milvus\",
 )
-for name in [\"docs_rag\", \"issues_rag\", \"code_rag\"]:
+for name in [\"kubeflow_docs\", \"issues_rag\", \"code_rag\"]:
     print(\"collection\", name, \"exists=\", utility.has_collection(name))
     if utility.has_collection(name):
         c = Collection(name)
@@ -223,7 +223,7 @@ kubectl logs milvus-check -n docs-agent
 kubectl delete pod milvus-check -n docs-agent
 ```
 
-Example output observed in this environment: `docs_rag` and `issues_rag` populated; `code_rag` exists with **0** entities until the code ingestion pipeline is rerun.
+Example output observed in this environment: `kubeflow_docs` and `issues_rag` populated; `code_rag` exists with **0** entities until the code ingestion pipeline is rerun.
 
 ### MCP “hello world” (live Milvus + `search_kubeflow_docs`)
 
@@ -258,7 +258,7 @@ All components share a virtualenv at `/workspace/.venv`. Activate with `source /
 | `MILVUS_USER` | `root` | Milvus username |
 | `MILVUS_PASSWORD` | *(required, from secret)* | Milvus password — never in ConfigMap |
 | `EMBEDDINGS_URL` | `http://embeddings-service-predictor.ml-infra.svc.cluster.local/embed` | TEI embeddings service |
-| `COLLECTION_NAME` | `docs_rag` | Docs Milvus collection |
+| `COLLECTION_NAME` | `kubeflow_docs` | Docs Milvus collection (upstream default) |
 | `ISSUES_COLLECTION_NAME` | `issues_rag` | GitHub issues collection |
 | `CODE_COLLECTION_NAME` | `code_rag` | Kubeflow code collection |
 | `PORT` | `8000` | Server listen port |

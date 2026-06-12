@@ -9,7 +9,7 @@ from typing import Sequence
 import requests
 
 # Milvus collection names (underscores only — hyphens are invalid in Milvus).
-DOCS_COLLECTION = "docs_rag"
+DOCS_COLLECTION = "kubeflow_docs"
 ISSUES_COLLECTION = "issues_rag"
 CODE_COLLECTION = "code_rag"
 
