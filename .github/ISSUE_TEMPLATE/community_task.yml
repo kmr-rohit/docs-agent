@@ -1,0 +1,59 @@
+name: Community task
+description: Propose or track contributor-friendly work (tests, docs, CI, UX)
+title: "[area]: "
+labels: ["help wanted"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        See [docs/community/CONTRIBUTION_MAP.md](https://github.com/kubeflow/docs-agent/blob/main/docs/community/CONTRIBUTION_MAP.md) for maintainer-owned vs community areas.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - area/tests
+        - area/ci
+        - area/docs
+        - area/pipelines
+        - area/mcp-server
+        - area/frontend
+        - area/infra
+    validations:
+      required: true
+  - type: dropdown
+    id: size
+    attributes:
+      label: Estimated size
+      options:
+        - size/S (few hours)
+        - size/M (1–2 days)
+        - size/L (multi-day)
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / goal
+      placeholder: What should be better after this is done?
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      placeholder: |
+        - [ ] Tests pass (`pytest -v`)
+        - [ ] ...
+    validations:
+      required: true
+  - type: input
+    id: gsoc_section
+    attributes:
+      label: GSoC spec section (optional)
+      placeholder: e.g. Phase 1 ingestion, checklist item #5
+  - type: checkboxes
+    id: maintainer_only
+    attributes:
+      label: Scope check
+      options:
+        - label: This touches agent routing, MCP tool design, or eval strategy (needs maintainer-only label)
+          required: false
