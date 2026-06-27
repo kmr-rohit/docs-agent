@@ -2,7 +2,8 @@
 
 **Date:** 25 June 2026  
 **Project:** [kubeflow/docs-agent](https://github.com/kubeflow/docs-agent) · GSoC 2026 · [KEP-867](https://github.com/kubeflow/community/issues/867)  
-**Spec:** [gsoc2026_agentic_rag.md](../../gsoc2026_agentic_rag.md)
+**Spec:** [gsoc2026_agentic_rag.md](../../gsoc2026_agentic_rag.md)  
+**Architecture diagrams:** [ARCHITECTURE.md](./ARCHITECTURE.md) (current + dotted planned improvements)
 
 ---
 
