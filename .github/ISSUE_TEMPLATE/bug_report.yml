@@ -1,0 +1,51 @@
+name: Bug report
+description: Something broken in MCP, pipelines, frontend, or deploy
+title: "[bug]: "
+labels: ["kind/bug"]
+body:
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - MCP server (search tools)
+        - KFP pipeline (docs/issues/code ingestion)
+        - Frontend chat widget
+        - Kagent / Agent CRD
+        - Terraform / manifests / cluster deploy
+        - CI workflow
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: Commands, cluster context, query used
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Image / commit / branch
+      placeholder: e.g. ghcr.io/kubeflow/mcp-kubeflow-docs:v0.1.0 or git SHA
+  - type: checkboxes
+    id: collections
+    attributes:
+      label: Milvus collections involved (if retrieval)
+      options:
+        - label: kubeflow_docs
+        - label: issues_rag
+        - label: code_rag

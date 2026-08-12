@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: GSoC 2026 architecture spec
+    url: https://github.com/kubeflow/docs-agent/blob/main/gsoc2026_agentic_rag.md
+    about: Long-term design goals and phased roadmap
+  - name: Contribution map (what to work on)
+    url: https://github.com/kubeflow/docs-agent/blob/main/docs/community/CONTRIBUTION_MAP.md
+    about: Maintainer-owned vs community-friendly areas
