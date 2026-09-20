@@ -1,17 +1,16 @@
 # Agent docs — issue triage (first merge)
 
-This folder is the **instruction pack + label set** for GitHub Agentic
-Workflows. Merge this first. Then compile a workflow and open a test PR.
+Instruction Markdown and labels for GitHub Agentic Workflows on **this repo**.
+Merge this first. Then copy the instruction file, compile, and open a test PR.
 
-| File | Who uses it |
+| File | Role |
 | --- | --- |
-| [`issue-triage.md`](./issue-triage.md) | **docs-agent** AW source — copy to `.github/workflows/issue-triage.md` |
-| [`kfp-issue-triage.md`](./kfp-issue-triage.md) | **Kubeflow Pipelines** AW source for Shristi's test PR |
-| [`triage-labels.md`](./triage-labels.md) | docs-agent `kind/*` and `area/*` labels (`area/mcp`, …) |
+| [`issue-triage.md`](./issue-triage.md) | AW source — copy to `.github/workflows/issue-triage.md` |
+| [`triage-labels.md`](./triage-labels.md) | `kind/*` and `area/*` labels (`area/mcp`, …) |
 | [`architecture.md`](./architecture.md) | Trusted layer/file map the agent must read |
 | [`area-map.json`](./area-map.json) | Same map as JSON |
 
-## Create labels (docs-agent)
+## Create labels
 
 GitHub will not apply a label that does not exist. After merge:
 
@@ -21,9 +20,7 @@ GitHub will not apply a label that does not exist. After merge:
 
 Titles: `<type>(<area>): <summary>` — example `bug(mcp): search_kubeflow_docs returns Search failed`.
 
-## Shristi: run initial AW testing with a PR
-
-### docs-agent
+## Run initial AW testing with a PR
 
 ```bash
 gh extension install github/gh-aw   # once
@@ -39,17 +36,3 @@ After that PR is on a repo with issues enabled, open a test issue:
 - `bug(mcp): search_kubeflow_docs returns Search failed on empty collection`
 
 Expect `kind/bug` + `area/mcp` and one triage comment.
-
-### Kubeflow Pipelines
-
-```bash
-# in a kubeflow/pipelines checkout
-cp /path/to/docs-agent/docs/agents/kfp-issue-triage.md .github/workflows/issue-triage.md
-gh aw compile .github/workflows/issue-triage.md
-# open a PR with the .md + .lock.yml
-```
-
-Test issue titles: `bug(backend): …`, `bug(frontend): …`, `feat(sdk): …`.
-
-Pipelines already has `area/backend` / `area/frontend` / `area/sdk`. Do not
-create docs-agent labels (`area/mcp`) there.

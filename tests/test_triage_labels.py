@@ -8,8 +8,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SYNC_SCRIPT = REPO_ROOT / "scripts" / "sync-github-labels.sh"
 LABELS_DOC = REPO_ROOT / "docs" / "agents" / "triage-labels.md"
-DOCS_AGENT_WORKFLOW = REPO_ROOT / "docs" / "agents" / "issue-triage.md"
-KFP_WORKFLOW = REPO_ROOT / "docs" / "agents" / "kfp-issue-triage.md"
+WORKFLOW = REPO_ROOT / "docs" / "agents" / "issue-triage.md"
 README = REPO_ROOT / "docs" / "agents" / "README.md"
 
 CREATE_LABEL_RE = re.compile(r'^create_label "([^"]+)"')
@@ -53,29 +52,20 @@ class TestTriageLabels:
         missing = [name for name in _labels_from_sync_script() if f"`{name}`" not in doc]
         assert missing == []
 
-    def test_docs_agent_allowlist_matches_sync_script(self):
-        assert set(_allowed_from_workflow(DOCS_AGENT_WORKFLOW)) == set(_labels_from_sync_script())
+    def test_allowlist_matches_sync_script(self):
+        assert set(_allowed_from_workflow(WORKFLOW)) == set(_labels_from_sync_script())
 
-    def test_instruction_files_are_aw_sources(self):
-        for path in (DOCS_AGENT_WORKFLOW, KFP_WORKFLOW):
-            text = path.read_text(encoding="utf-8")
-            assert text.startswith("---\n")
-            assert "safe-outputs:" in text
-            assert "add-labels:" in text
-            assert "docs/agents/architecture.md" in text or "docs/agents/architecture.md" in KFP_WORKFLOW.read_text(
-                encoding="utf-8"
-            )
+    def test_instruction_file_is_aw_source(self):
+        text = WORKFLOW.read_text(encoding="utf-8")
+        assert text.startswith("---\n")
+        assert "safe-outputs:" in text
+        assert "add-labels:" in text
+        assert "docs/agents/architecture.md" in text
+        assert "area/mcp" in text
 
-    def test_kfp_pack_uses_pipelines_labels(self):
-        allowed = _allowed_from_workflow(KFP_WORKFLOW)
-        assert "area/backend" in allowed
-        assert "area/frontend" in allowed
-        assert "area/sdk" in allowed
-        assert "area/mcp" not in allowed
-        assert "status/triaged" in allowed
-
-    def test_readme_tells_shristi_how_to_open_a_compile_pr(self):
+    def test_readme_tells_how_to_open_a_compile_pr(self):
         text = README.read_text(encoding="utf-8")
         assert "gh aw compile" in text
         assert "issue-triage.md" in text
         assert "sync-github-labels.sh" in text
+        assert "kfp-issue-triage" not in text
