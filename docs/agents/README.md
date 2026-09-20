@@ -1,33 +1,55 @@
-# Agent docs
+# Agent docs — issue triage (first merge)
 
-Trusted context for GitHub Agentic Workflows and human maintainers.
+This folder is the **instruction pack + label set** for GitHub Agentic
+Workflows. Merge this first. Then compile a workflow and open a test PR.
 
-| File | Role |
+| File | Who uses it |
 | --- | --- |
-| [`architecture.md`](./architecture.md) | In-repo architecture map (from the implementation deep dive) |
-| [`triage-labels.md`](./triage-labels.md) | `kind/*` and `area/*` vocabulary, including `area/mcp` |
-| [`area-map.json`](./area-map.json) | Machine map: title area → files + labels |
-| [`kfp-issue-triage.md`](./kfp-issue-triage.md) | Copy-paste pack for Kubeflow Pipelines (`kubeflow/pipelines`) |
-| [`.github/workflows/issue-triage.md`](../../.github/workflows/issue-triage.md) | docs-agent issue triage workflow source |
+| [`issue-triage.md`](./issue-triage.md) | **docs-agent** AW source — copy to `.github/workflows/issue-triage.md` |
+| [`kfp-issue-triage.md`](./kfp-issue-triage.md) | **Kubeflow Pipelines** AW source for Shristi's test PR |
+| [`triage-labels.md`](./triage-labels.md) | docs-agent `kind/*` and `area/*` labels (`area/mcp`, …) |
+| [`architecture.md`](./architecture.md) | Trusted layer/file map the agent must read |
+| [`area-map.json`](./area-map.json) | Same map as JSON |
 
-## How triage uses source and architecture
+## Create labels (docs-agent)
 
-1. A new issue title is parsed as `<type>(<area>): <summary>`.
-2. `scripts/select-triage-context.py` resolves `area` through `area-map.json`.
-3. The agent **must** read `architecture.md` plus the selected source files
-   before commenting or labeling.
-4. Labels are applied only through `safe-outputs` (`kind/*`, `area/mcp`, …).
-
-Create labels before the first run:
+GitHub will not apply a label that does not exist. After merge:
 
 ```bash
 ./scripts/sync-github-labels.sh kubeflow/docs-agent
 ```
 
-After editing the workflow source:
+Titles: `<type>(<area>): <summary>` — example `bug(mcp): search_kubeflow_docs returns Search failed`.
+
+## Shristi: run initial AW testing with a PR
+
+### docs-agent
 
 ```bash
+gh extension install github/gh-aw   # once
+cp docs/agents/issue-triage.md .github/workflows/issue-triage.md
 gh aw compile .github/workflows/issue-triage.md
+git add .github/workflows/issue-triage.md .github/workflows/issue-triage.lock.yml
+git commit -s -m "chore: compile docs-agent issue triage AW"
+# open a PR with those two files
 ```
 
-Commit both the `.md` source and the generated `.lock.yml`.
+After that PR is on a repo with issues enabled, open a test issue:
+
+- `bug(mcp): search_kubeflow_docs returns Search failed on empty collection`
+
+Expect `kind/bug` + `area/mcp` and one triage comment.
+
+### Kubeflow Pipelines
+
+```bash
+# in a kubeflow/pipelines checkout
+cp /path/to/docs-agent/docs/agents/kfp-issue-triage.md .github/workflows/issue-triage.md
+gh aw compile .github/workflows/issue-triage.md
+# open a PR with the .md + .lock.yml
+```
+
+Test issue titles: `bug(backend): …`, `bug(frontend): …`, `feat(sdk): …`.
+
+Pipelines already has `area/backend` / `area/frontend` / `area/sdk`. Do not
+create docs-agent labels (`area/mcp`) there.
