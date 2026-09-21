@@ -28,7 +28,7 @@ function createChatbotElements() {
 
         const headerActions = document.createElement('div');
         headerActions.className = 'header-actions';
-        
+
         const optionsBtn = document.createElement('button');
         optionsBtn.id = 'header-options-btn';
         optionsBtn.className = 'header-icon-btn';
@@ -52,7 +52,7 @@ function createChatbotElements() {
         closeBtn.className = 'header-icon-btn toggle-chatbot';
         closeBtn.title = 'Close assistant';
         closeBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>';
-        
+
         headerActions.appendChild(optionsBtn);
         headerActions.appendChild(expandBtn);
         headerActions.appendChild(closeBtn);
@@ -83,45 +83,45 @@ function createChatbotElements() {
         optionsDropdown.appendChild(exportTranscriptOpt);
         optionsDropdown.appendChild(newChatOpt);
         optionsDropdown.appendChild(clearThreadOpt);
-        
+
         chatbotHeader.appendChild(optionsDropdown);
 
         // Create sidebar strip
         const sidebarStrip = document.createElement('div');
         sidebarStrip.id = 'sidebar-strip';
         sidebarStrip.className = 'sidebar-strip';
-        
+
         // Top section with logo and new chat
         const sidebarTop = document.createElement('div');
         sidebarTop.className = 'sidebar-top';
-        
+
         const floLogo = document.createElement('img');
         floLogo.className = 'flo-logo';
         floLogo.src = 'https://cdn.jsdelivr.net/gh/SanthoshToorpu/docs-agent@main/assets/flo_avatar.png';
         floLogo.alt = 'Flo Logo';
         floLogo.title = 'Flo AI Companion';
-        
+
         const newChatIcon = document.createElement('button');
         newChatIcon.id = 'sidebar-new-chat';
         newChatIcon.className = 'sidebar-icon-btn';
         newChatIcon.innerHTML = '✏️';
         newChatIcon.title = 'New chat';
-        
+
         sidebarTop.appendChild(floLogo);
         sidebarTop.appendChild(newChatIcon);
-        
+
         // Bottom section with expand icon
         const sidebarBottom = document.createElement('div');
         sidebarBottom.className = 'sidebar-bottom';
-        
+
         const expandIcon = document.createElement('button');
         expandIcon.id = 'sidebar-expand';
         expandIcon.className = 'sidebar-icon-btn expand-btn';
         expandIcon.innerHTML = '☰';
         expandIcon.title = 'Chat history';
-        
+
         sidebarBottom.appendChild(expandIcon);
-        
+
         sidebarStrip.appendChild(sidebarTop);
         sidebarStrip.appendChild(sidebarBottom);
 
@@ -129,15 +129,15 @@ function createChatbotElements() {
         const chatSidebar = document.createElement('div');
         chatSidebar.id = 'chat-sidebar';
         chatSidebar.className = 'chat-sidebar collapsed';
-        
+
         const sidebarHeader = document.createElement('div');
         sidebarHeader.className = 'sidebar-header';
         sidebarHeader.innerHTML = '<h3>Chat History</h3>';
-        
+
         const chatList = document.createElement('div');
         chatList.id = 'chat-list';
         chatList.className = 'chat-list';
-        
+
         chatSidebar.appendChild(sidebarHeader);
         chatSidebar.appendChild(chatList);
 
@@ -198,10 +198,10 @@ function createChatbotElements() {
         // 1. Mascot simulator card
         const mascotCard = document.createElement('div');
         mascotCard.className = 'persona-card mascot-card';
-        
+
         const mascotContent = document.createElement('div');
         mascotContent.className = 'persona-card-content mascot-content';
-        
+
         const mascotVideo = document.createElement('video');
         mascotVideo.id = 'mascot-persona-video';
         mascotVideo.className = 'persona-video';
@@ -212,14 +212,14 @@ function createChatbotElements() {
         mascotVideo.setAttribute('playsinline', '');
         mascotVideo.setAttribute('disablePictureInPicture', '');
         mascotVideo.dataset.persona = activePersona;
-        
+
         const mascotLabel = document.createElement('div');
         mascotLabel.id = 'mascot-persona-label';
         mascotLabel.className = 'mascot-persona-label';
         mascotLabel.innerHTML = activePersona === 'debug'
             ? `<span class="mascot-badge debug-badge"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg> Flo Debugger</span>`
             : `<span class="mascot-badge docs-badge"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg> Flo AI Companion</span>`;
-        
+
         mascotContent.appendChild(mascotVideo);
         mascotContent.appendChild(mascotLabel);
         mascotCard.appendChild(mascotContent);
@@ -228,11 +228,11 @@ function createChatbotElements() {
         // 2. Select Persona Card
         const selectorCard = document.createElement('div');
         selectorCard.className = 'persona-card selector-card';
-        
+
         const selectorHeader = document.createElement('div');
         selectorHeader.className = 'persona-card-header';
         selectorHeader.innerHTML = '<h4>PERSONA</h4>';
-        
+
         const selectorContent = document.createElement('div');
         selectorContent.className = 'persona-card-content selector-content';
         // Options use activePersona declared above
@@ -295,12 +295,12 @@ function createChatbotElements() {
         chatbotToggle.className = 'chatbot-toggle';
         chatbotToggle.title = 'Chat with Flo';
         chatbotToggle.innerHTML = `<video class="flo-toggle-icon" src="${activePersona === 'debug' ? 'https://cdn.jsdelivr.net/gh/SanthoshToorpu/docs-agent@main/assets/flo_debugger.webm' : 'https://cdn.jsdelivr.net/gh/SanthoshToorpu/docs-agent@main/assets/flo.webm'}" autoplay loop muted playsinline disablePictureInPicture></video>`;
-        
+
         const speechBubble = document.createElement('div');
         speechBubble.className = 'chatbot-speech-bubble';
         speechBubble.textContent = 'Ask Flo!';
         chatbotToggle.appendChild(speechBubble);
-        
+
         document.body.appendChild(chatbotToggle);
 
         // Force a small delay to ensure DOM is updated
@@ -308,11 +308,11 @@ function createChatbotElements() {
             setTimeout(() => {
                 // Verify all elements were created successfully
                 const requiredElements = [
-                    'chatbot-container', 'chatbot-backdrop', 'chat-messages', 
-                    'user-input', 'send-message', 'toggle-chatbot', 'chatbot-toggle', 
+                    'chatbot-container', 'chatbot-backdrop', 'chat-messages',
+                    'user-input', 'send-message', 'toggle-chatbot', 'chatbot-toggle',
                     'sidebar-strip', 'sidebar-new-chat', 'sidebar-expand', 'chat-sidebar', 'chat-list'
                 ];
-                
+
                 const missingElements = requiredElements.filter(id => !document.getElementById(id));
                 if (missingElements.length > 0) {
                     console.error('Failed to create chatbot elements:', missingElements);
@@ -323,24 +323,184 @@ function createChatbotElements() {
                 }
             }, 10);
         });
-        
+
     } catch (error) {
         console.error('Error creating chatbot elements:', error);
         return false;
     }
 }
 
+function escapeMarkdownHtml(text) {
+    return String(text).replace(/[&<>"']/g, function(character) {
+        const entities = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        };
+        return entities[character];
+    });
+}
+
+// Small, dependency-free Markdown subset used by streamed and completed chat
+// messages. Code is protected before other formatting so YAML and shell
+// snippets are never interpreted as links or replacement-string tokens.
+function formatChatMarkdown(text, isStreaming = false) {
+    if (!text) return '';
+
+    let formatted = text;
+    const codeBlockPlaceholders = [];
+    const inlineCodePlaceholders = [];
+
+    function preserveCodeBlock(language, code, trimCode) {
+        const placeholder = `__CODE_BLOCK_${codeBlockPlaceholders.length}__`;
+        const safeLanguage = language || 'text';
+        const codeText = trimCode ? code.trim() : code;
+        codeBlockPlaceholders.push(
+            `<pre><code class="language-${safeLanguage}">${escapeMarkdownHtml(codeText)}</code></pre>`
+        );
+        return placeholder;
+    }
+
+    const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
+    formatted = formatted.replace(codeBlockRegex, function(match, language, code) {
+        return preserveCodeBlock(language, code, !isStreaming);
+    });
+
+    if (isStreaming) {
+        const incompleteCodeRegex = /```(\w+)?\n([\s\S]*)$/;
+        if (incompleteCodeRegex.test(formatted) && !formatted.endsWith('```')) {
+            formatted = formatted.replace(incompleteCodeRegex, function(match, language, code) {
+                return preserveCodeBlock(language, code, false);
+            });
+        }
+    }
+
+    formatted = formatted.replace(/`([^`\n]+)`/g, function(match, code) {
+        const placeholder = `__INLINE_CODE_${inlineCodePlaceholders.length}__`;
+        inlineCodePlaceholders.push(`<code>${escapeMarkdownHtml(code)}</code>`);
+        return placeholder;
+    });
+
+    // Linkify only explicit http(s) Markdown links. Other schemes remain
+    // visible as text instead of becoming executable browser destinations.
+    formatted = formatted.replace(
+        /\[([^\]\n]+)\]\((https?:\/\/[^\s<>"')]+)\)/gi,
+        function(match, label, url) {
+            return `<a href="${escapeMarkdownHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeMarkdownHtml(label)}</a>`;
+        }
+    );
+
+    formatted = formatted.replace(/\n/g, '<br>');
+    formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+    inlineCodePlaceholders.forEach(function(inlineCode, index) {
+        formatted = formatted.replace(`__INLINE_CODE_${index}__`, function() {
+            return inlineCode;
+        });
+    });
+
+    codeBlockPlaceholders.forEach(function(codeBlock, index) {
+        // A function replacement is required: replacement strings interpret
+        // sequences such as $&, $1, and $' that commonly occur in code/YAML.
+        formatted = formatted.replace(`__CODE_BLOCK_${index}__`, function() {
+            return codeBlock;
+        });
+    });
+
+    return formatted;
+}
+
+// Incrementally decode Server-Sent Events without assuming that a network
+// chunk ends on a line or event boundary.  `push` returns only complete event
+// payloads; `finish` also flushes one final unterminated frame when the server
+// closes the stream.
+function createSSEFrameParser() {
+    let buffer = '';
+    let finished = false;
+
+    function payloadFromFrame(frame) {
+        const dataLines = [];
+        const rawLines = [];
+
+        for (const line of frame.split(/\r\n|\r|\n/)) {
+            if (!line || line.startsWith(':')) continue;
+
+            const colonIndex = line.indexOf(':');
+            const field = colonIndex === -1 ? line : line.substring(0, colonIndex);
+            let value = colonIndex === -1 ? '' : line.substring(colonIndex + 1);
+            if (value.startsWith(' ')) value = value.substring(1);
+
+            if (field === 'data') {
+                dataLines.push(value);
+            } else if (colonIndex === -1) {
+                // Keep compatibility with endpoints that return newline-framed
+                // JSON without the optional SSE `data:` prefix.
+                rawLines.push(line);
+            }
+        }
+
+        if (dataLines.length > 0) return dataLines.join('\n');
+        if (rawLines.length > 0) return rawLines.join('\n');
+        return null;
+    }
+
+    function drainCompleteFrames(isFinal = false) {
+        const payloads = [];
+        // A blank SSE line may use LF, CRLF, or CR. Negative lookahead keeps a
+        // single CRLF from being mistaken for two separate line endings.
+        const boundary = /(?:\r\n|\r(?!\n)|\n)(?:\r\n|\r(?!\n)|\n)/;
+        let match;
+
+        while ((match = boundary.exec(buffer)) !== null) {
+            const matchEnd = match.index + match[0].length;
+            // A CR at the current end of the buffer may become the first byte
+            // of CRLF in the next chunk, so defer classifying it until then.
+            if (!isFinal && matchEnd === buffer.length && match[0].endsWith('\r')) {
+                break;
+            }
+            const frame = buffer.substring(0, match.index);
+            buffer = buffer.substring(matchEnd);
+            const payload = payloadFromFrame(frame);
+            if (payload !== null) payloads.push(payload);
+        }
+
+        return payloads;
+    }
+
+    return {
+        push(chunk) {
+            if (finished || !chunk) return [];
+            buffer += chunk;
+            return drainCompleteFrames();
+        },
+        finish(chunk = '') {
+            if (finished) return [];
+            if (chunk) buffer += chunk;
+
+            const payloads = drainCompleteFrames(true);
+            const finalPayload = payloadFromFrame(buffer);
+            if (finalPayload !== null) payloads.push(finalPayload);
+
+            buffer = '';
+            finished = true;
+            return payloads;
+        }
+    };
+}
+
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('Docs Bot Initialized (v1.1.0 - Kagent A2A, configurable URL)');
-    
+
     // Create chatbot HTML structure dynamically and wait for completion
     const elementsCreated = await createChatbotElements();
-    
+
     if (!elementsCreated) {
         console.error('Failed to create chatbot elements, aborting initialization');
         return;
     }
-    
+
     // DOM Elements - with null checks
     const chatbotContainer = document.getElementById('chatbot-container');
     const chatbotBackdrop = document.getElementById('chatbot-backdrop');
@@ -390,12 +550,16 @@ document.addEventListener('DOMContentLoaded', async function() {
     let isTyping = false;
     let currentMessageDiv = null;
     let currentMessageContent = '';
+    let pendingCitations = []; // Citations collected for the current response
+    let currentAbortController = null; // For cancelling in-flight fetch streams
+    let currentReader = null; // Active ReadableStream reader
+    let currentTaskId = null; // Active Kagent task ID
     let messagesHistory = []; // Current chat messages
     let chatsStack = []; // Stack of all chats: [{name: string, messages: array}, ...]
     let currentChatIndex = -1; // Index of current chat in stack, -1 for new unsaved chat
     let currentContextId = generateUUID(); // KAgent session ID
     let currentPersona = 'docs';
-    
+
     // TODO 2: Browser storage functions ✅
     function saveChatsToStorage() {
         try {
@@ -405,7 +569,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             console.error('Error saving chats to storage:', error);
         }
     }
-    
+
     function loadChatsFromStorage() {
         try {
             const saved = localStorage.getItem('chatbot_chats_stack');
@@ -418,7 +582,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             chatsStack = [];
         }
     }
-    
+
     function generateChatName(messages) {
         // Generate name from first 3 words of first user message
         const firstUserMessage = messages.find(msg => msg.role === 'user');
@@ -429,7 +593,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
         return `Chat ${chatsStack.length + 1}`;
     }
-    
+
     // TODO 3: New chat functionality ✅
     function startNewChat() {
         // Save current chat to stack if it has messages
@@ -440,7 +604,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 contextId: currentContextId,
                 messages: [...messagesHistory] // Copy array
             };
-            
+
             if (currentChatIndex === -1) {
                 // Push new chat to stack
                 chatsStack.push(currentChat);
@@ -450,34 +614,34 @@ document.addEventListener('DOMContentLoaded', async function() {
                 chatsStack[currentChatIndex] = currentChat;
                 console.log(`Updated existing chat: "${chatName}"`);
             }
-            
+
             // Save to storage
             saveChatsToStorage();
         }
-        
+
         // Reset current chat state
         currentChatIndex = -1;
         messagesHistory = [];
         currentContextId = generateUUID();
-        
+
         // Clear UI
         clearChatUI();
-        
+
         // Add welcome message
         addWelcomeMessage();
-        
+
         // Update sidebar
         updateSidebar();
-        
+
         console.log('Started new chat');
     }
-    
+
     function clearChatUI() {
         if (chatMessages) {
             chatMessages.innerHTML = '';
         }
     }
-    
+
     function addWelcomeMessage() {
         const docsWelcomeMsg = "Hello! I'm Flo AI Companion, your friendly Kubeflow documentation assistant. How can I help you today?";
         const debugWelcomeMsg = "Hello! I'm Flo Debugger. Show me your error logs, Python pipelines, or YAML configurations, and I will help you debug them.";
@@ -488,7 +652,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             content: welcomeMsg
         });
     }
-    
+
     // Auto-save current chat periodically
     function autoSaveCurrentChat() {
         if (messagesHistory.length > 1) { // More than just welcome message
@@ -498,7 +662,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 contextId: currentContextId,
                 messages: [...messagesHistory]
             };
-            
+
             if (currentChatIndex === -1) {
                 // This is a new chat, push to stack
                 chatsStack.push(currentChat);
@@ -509,25 +673,25 @@ document.addEventListener('DOMContentLoaded', async function() {
                 chatsStack[currentChatIndex] = currentChat;
                 console.log(`Auto-saved existing chat: "${chatName}"`);
             }
-            
+
             saveChatsToStorage();
             updateSidebar(); // Refresh sidebar to show updated chat names
         }
     }
-    
+
     // Sidebar Management Functions
     function updateSidebar() {
         if (!chatList || !chatSidebar) return;
-        
+
         // Only render chats if sidebar is expanded (not collapsed)
         if (chatSidebar.classList.contains('collapsed')) {
             chatList.innerHTML = ''; // Clear when collapsed
             return;
         }
-        
+
         // Clear existing items
         chatList.innerHTML = '';
-        
+
         // Add each chat to the sidebar
         chatsStack.forEach((chat, index) => {
             const chatItem = document.createElement('div');
@@ -535,14 +699,14 @@ document.addEventListener('DOMContentLoaded', async function() {
             if (index === currentChatIndex) {
                 chatItem.classList.add('active');
             }
-            
+
             const chatName = document.createElement('div');
             chatName.className = 'chat-name';
             chatName.textContent = chat.name;
-            
+
             const chatActions = document.createElement('div');
             chatActions.className = 'chat-actions';
-            
+
             const deleteButton = document.createElement('button');
             deleteButton.className = 'delete-chat-btn';
             deleteButton.innerHTML = '×';
@@ -551,17 +715,17 @@ document.addEventListener('DOMContentLoaded', async function() {
                 e.stopPropagation();
                 deleteChat(index);
             };
-            
+
             chatActions.appendChild(deleteButton);
             chatItem.appendChild(chatName);
             chatItem.appendChild(chatActions);
-            
+
             // Click to switch to this chat
             chatItem.onclick = () => switchToChat(index);
-            
+
             chatList.appendChild(chatItem);
         });
-        
+
         // Add empty state if no chats
         if (chatsStack.length === 0) {
             const emptyState = document.createElement('div');
@@ -570,34 +734,34 @@ document.addEventListener('DOMContentLoaded', async function() {
             chatList.appendChild(emptyState);
         }
     }
-    
+
     function toggleSidebar() {
         if (!chatSidebar) return;
-        
+
         chatSidebar.classList.toggle('collapsed');
         if (!chatSidebar.classList.contains('collapsed')) {
             updateSidebar(); // Refresh the sidebar content when opening
         }
     }
-    
+
     function closeSidebar() {
         if (!chatSidebar) return;
-        
+
         chatSidebar.classList.add('collapsed');
     }
-    
+
     function switchToChat(chatIndex) {
         if (chatIndex < 0 || chatIndex >= chatsStack.length) return;
-        
+
         // Save current chat if it has changes
         autoSaveCurrentChat();
-        
+
         // Load the selected chat
         const selectedChat = chatsStack[chatIndex];
         currentChatIndex = chatIndex;
         messagesHistory = [...selectedChat.messages];
         currentContextId = selectedChat.contextId || generateUUID();
-        
+
         // Clear and rebuild UI
         clearChatUI();
         messagesHistory.forEach(msg => {
@@ -607,21 +771,21 @@ document.addEventListener('DOMContentLoaded', async function() {
                 addMessage(msg.content, 'bot');
             }
         });
-        
+
         // Update sidebar to show active chat
         updateSidebar();
-        
+
         console.log(`Switched to chat: ${selectedChat.name}`);
     }
-    
+
     function deleteChat(chatIndex) {
         if (chatIndex < 0 || chatIndex >= chatsStack.length) return;
-        
+
         const chatToDelete = chatsStack[chatIndex];
-        
+
         // Remove from stack
         chatsStack.splice(chatIndex, 1);
-        
+
         // Update current chat index if needed
         if (currentChatIndex === chatIndex) {
             // If we're deleting the current chat, start a new one
@@ -633,11 +797,11 @@ document.addEventListener('DOMContentLoaded', async function() {
             // Adjust current index if a chat before it was deleted
             currentChatIndex--;
         }
-        
+
         // Save to storage and update sidebar
         saveChatsToStorage();
         updateSidebar();
-        
+
         console.log(`Deleted chat: ${chatToDelete.name}`);
     }
 
@@ -664,7 +828,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     function getAPIUrl() {
         const agentName = currentPersona === 'debug' ? 'kubeflow-debug-agent' : 'kubeflow-docs-agent';
         const base = resolveAgentApiUrl();
-        
+
         if (base.includes('kubeflow-docs-agent')) {
             return base.replace('kubeflow-docs-agent', agentName);
         } else if (base.includes('kubeflow-debug-agent')) {
@@ -690,6 +854,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     let sessionToken = null;
     let sessionExpiresAt = 0;
     let sessionFetch = null;
+    let sessionEndpointAvailable = true; // Disabled after first failure to avoid redundant errors
 
     function getSessionUrl() {
         return new URL(SESSION_PATH, getAPIUrl()).toString();
@@ -714,19 +879,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     // Work out, in *browser* time, when this token stops being usable.
-    //
-    // Istio validates the token's `exp`, which is stamped in server time,
-    // while the widget can only compare against Date.now(), which is browser
-    // time. Comparing the two directly is wrong: a laptop with a skewed clock
-    // (resumed from sleep, bad NTP) would disagree with the gateway about when
-    // the token dies, and if it believes it has longer than it really does,
-    // every request in that window fails.
-    //
-    // So never compare across clocks. Take the token's *lifetime* — exp minus
-    // iat, both server-clock, so the skew cancels out — and anchor it to the
-    // moment we asked for it. `expires_in` is kept as a second opinion, and we
-    // take whichever expires first: refreshing early costs one extra mint,
-    // while trusting a dead token costs a failed request in the user's face.
     function computeSessionExpiry(data, requestedAt) {
         const candidates = [];
 
@@ -741,8 +893,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             candidates.push(requestedAt + (ttlSeconds * 1000));
         }
 
-        // Neither source usable: treat the token as already stale so the next
-        // send re-mints rather than confidently sending something dead.
         return candidates.length ? Math.min.apply(null, candidates) : 0;
     }
 
@@ -755,20 +905,28 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     async function fetchSessionToken() {
-        const requestedAt = Date.now();
-        const response = await fetch(getSessionUrl(), { method: 'POST' });
-        if (!response.ok) {
-            throw new Error(`session request failed: ${response.status}`);
+        if (!sessionEndpointAvailable) return null;
+        try {
+            const requestedAt = Date.now();
+            const response = await fetch(getSessionUrl(), { method: 'POST' });
+            if (!response.ok) {
+                sessionEndpointAvailable = false;
+                return null;
+            }
+            const data = await response.json();
+            sessionToken = data.access_token;
+            sessionExpiresAt = computeSessionExpiry(data, requestedAt);
+            return sessionToken;
+        } catch (e) {
+            sessionEndpointAvailable = false; // Mark unavailable for rest of session
+            return null;
         }
-        const data = await response.json();
-        sessionToken = data.access_token;
-        sessionExpiresAt = computeSessionExpiry(data, requestedAt);
-        return sessionToken;
     }
 
     // Returns a valid token, minting one if absent, near expiry, or already
     // past it. Concurrent callers share a single in-flight request.
     async function getSessionToken({ forceRefresh = false } = {}) {
+        if (!sessionEndpointAvailable) return null;
         if (forceRefresh) {
             sessionToken = null;
             sessionExpiresAt = 0;
@@ -776,30 +934,15 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (isSessionTokenFresh()) {
             return sessionToken;
         }
-        // Remember the token we are replacing: a *proactive* refresh (we are
-        // inside the margin but not actually expired yet) must not throw away
-        // a working token just because the issuer blipped.
-        const previousToken = sessionToken;
-        const previouslyUsable = isSessionTokenUsable();
 
         if (!sessionFetch) {
             sessionFetch = fetchSessionToken().finally(() => { sessionFetch = null; });
         }
-        try {
-            return await sessionFetch;
-        } catch (error) {
-            if (previouslyUsable) {
-                console.warn('Session refresh failed; reusing the current token until it expires:', error);
-                return previousToken;
-            }
-            throw error;
-        }
+        return await sessionFetch;
     }
 
-    // POST to the agent with a session token attached. A 401/403 means the
-    // token was rejected (expired, or the signing key rotated), so mint a
-    // fresh one and retry exactly once.
-    async function postToAgent(payload) {
+    // POST to the agent with a session token attached.
+    async function postToAgent(payload, options = {}) {
         const send = async (token) => fetch(getAPIUrl(), {
             method: 'POST',
             headers: {
@@ -807,24 +950,87 @@ document.addEventListener('DOMContentLoaded', async function() {
                 'Accept': 'text/event-stream',
                 ...(token ? { 'Authorization': `Bearer ${token}` } : {})
             },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(payload),
+            signal: options.signal
         });
 
         let token = null;
         try {
             token = await getSessionToken();
-        } catch (error) {
-            // Session endpoint unavailable (e.g. gateway without session auth).
-            // Fall through unauthenticated rather than blocking the chat.
-            console.warn('Could not obtain a session token:', error);
-        }
+        } catch (error) {}
 
         let response = await send(token);
         if (token && (response.status === 401 || response.status === 403)) {
-            console.log('Session token rejected — refreshing and retrying');
             response = await send(await getSessionToken({ forceRefresh: true }));
         }
         return response;
+    }
+
+    // Toggle Send button between "Send" (arrow) and "Stop" (square) mode
+    function setStopButtonState(isStreaming) {
+        if (!sendButton) return;
+        if (isStreaming) {
+            sendButton.classList.add('stop-mode');
+            sendButton.title = 'Stop generation';
+            sendButton.innerHTML = `
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                    <rect x="6" y="6" width="12" height="12" rx="2" />
+                </svg>
+            `;
+        } else {
+            sendButton.classList.remove('stop-mode');
+            sendButton.title = 'Send message';
+            sendButton.innerHTML = '<svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>';
+        }
+    }
+
+    // Stop / cancel in-flight generation
+    async function stopGeneration() {
+        if (currentAbortController) {
+            currentAbortController.abort();
+            currentAbortController = null;
+        }
+
+        if (currentReader) {
+            try {
+                await currentReader.cancel();
+            } catch (e) {}
+            currentReader = null;
+        }
+
+        currentTaskId = null;
+        removeTypingIndicator();
+        setStopButtonState(false);
+        isTyping = false;
+
+        // Context preservation:
+        if (currentMessageContent && currentMessageContent.trim()) {
+            // Append badge in UI
+            if (currentMessageDiv) {
+                const paragraph = currentMessageDiv.querySelector('p');
+                if (paragraph) {
+                    const formattedText = formatMarkdown(currentMessageContent.trim());
+                    paragraph.innerHTML = formattedText + `<div class="interrupted-badge"><svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></svg> Response interrupted by user</div>`;
+                }
+                // Render any pending citations that were found before stopping
+                if (pendingCitations.length > 0) {
+                    renderCitationsOnDiv(currentMessageDiv, pendingCitations);
+                }
+            }
+            // Record in messagesHistory with explicit interruption note
+            messagesHistory.push({
+                role: 'assistant',
+                content: currentMessageContent.trim() + ' [Response interrupted by user]'
+            });
+        } else if (currentMessageDiv) {
+            // Cancelled before any text tokens were generated
+            currentMessageDiv.remove();
+        }
+
+        currentMessageDiv = null;
+        currentMessageContent = '';
+        autoSaveCurrentChat();
+        if (userInput) userInput.focus();
     }
 
     // API connection status
@@ -837,15 +1043,18 @@ document.addEventListener('DOMContentLoaded', async function() {
         isConnected = true;
         console.log('API connection ready');
     }
-    
+
     // Send message to API
     async function sendMessageToAPI(message, messagesHistory) {
+        currentAbortController = new AbortController();
+        currentTaskId = null;
+        setStopButtonState(true);
+        isTyping = true;
+
         try {
-            console.log('Sending message to API:', message);
-            
             const messageId = generateUUID();
             const rpcId = generateUUID();
-            
+
             const payload = {
                 jsonrpc: "2.0",
                 method: "message/stream",
@@ -854,16 +1063,16 @@ document.addEventListener('DOMContentLoaded', async function() {
                         kind: "message",
                         messageId: messageId,
                         role: "user",
-                        parts: [{"kind": "text", "text": message}],
+                        parts: [{ "kind": "text", "text": message }],
                         contextId: currentContextId,
-                        metadata: {"displaySource": "user"}
+                        metadata: { "displaySource": "user" }
                     },
                     metadata: {}
                 },
                 id: rpcId
             };
-            
-            const response = await postToAgent(payload);
+
+            const response = await postToAgent(payload, { signal: currentAbortController.signal });
 
             if (response.status === 429) {
                 throw new Error('Rate limit reached — please wait a moment and try again.');
@@ -871,37 +1080,75 @@ document.addEventListener('DOMContentLoaded', async function() {
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            
+
             // Handle streaming response
             const reader = response.body.getReader();
+            currentReader = reader;
             const decoder = new TextDecoder();
-            
+            const frameParser = createSSEFrameParser();
+
             // Reset current message state
             currentMessageDiv = null;
             currentMessageContent = '';
-            
+            pendingCitations = [];
+
+            function extractCitationsFromData(dataObj) {
+                if (!dataObj) return [];
+                if (Array.isArray(dataObj)) return dataObj;
+                if (typeof dataObj === 'string') {
+                    try {
+                        return extractCitationsFromData(JSON.parse(dataObj));
+                    } catch (e) { return []; }
+                }
+                if (dataObj.citations && Array.isArray(dataObj.citations)) {
+                    return dataObj.citations;
+                }
+                if (dataObj.response) {
+                    const nested = extractCitationsFromData(dataObj.response);
+                    if (nested.length > 0) return nested;
+                }
+                if (dataObj.structuredContent) {
+                    const nested = extractCitationsFromData(dataObj.structuredContent);
+                    if (nested.length > 0) return nested;
+                }
+                if (dataObj.result) {
+                    const nested = extractCitationsFromData(dataObj.result);
+                    if (nested.length > 0) return nested;
+                }
+                if (dataObj.content && Array.isArray(dataObj.content)) {
+                    for (const item of dataObj.content) {
+                        const nested = extractCitationsFromData(item.text || item);
+                        if (nested.length > 0) return nested;
+                    }
+                }
+                return [];
+            }
+
             while (true) {
-                const { done, value } = await reader.read();
-                
-                if (done) {
-                    console.log('Stream completed');
+                if (!isTyping || !currentAbortController || currentAbortController.signal.aborted) {
                     break;
                 }
-                
-                const chunk = decoder.decode(value, { stream: true });
-                const lines = chunk.split('\n');
-                
-                for (const line of lines) {
-                    if (line.trim() === '') continue;
-                    
+
+                const { done, value } = await reader.read();
+
+                if (!isTyping || !currentAbortController || currentAbortController.signal.aborted) {
+                    break;
+                }
+
+                const eventPayloads = done
+                    ? frameParser.finish(decoder.decode())
+                    : frameParser.push(decoder.decode(value, { stream: true }));
+
+                for (const dataStr of eventPayloads) {
+                    if (!isTyping || !currentAbortController || currentAbortController.signal.aborted) {
+                        break;
+                    }
+
                     try {
-                        let dataStr = line;
-                        if (line.startsWith('data: ')) {
-                            dataStr = line.substring(6);
-                        }
-                        
-                        // KAgent doesn't always send [DONE], but we handle it just in case
                         if (dataStr === '[DONE]') {
+                            if (currentMessageDiv && pendingCitations.length > 0) {
+                                renderCitationsOnDiv(currentMessageDiv, pendingCitations);
+                            }
                             if (currentMessageContent.trim()) {
                                 messagesHistory.push({
                                     role: 'assistant',
@@ -912,24 +1159,99 @@ document.addEventListener('DOMContentLoaded', async function() {
                             currentMessageContent = '';
                             autoSaveCurrentChat();
                             removeTypingIndicator();
+                            setStopButtonState(false);
+                            isTyping = false;
                             return;
                         }
-                        
+
                         const parsed = JSON.parse(dataStr);
-                        
-                        // Handle KAgent JSON-RPC Stream chunks
                         const result = parsed.result;
                         if (!result) continue;
-                        
+
+                        // Track active Task ID for cancellation
+                        if (result.taskId) {
+                            currentTaskId = result.taskId;
+                        } else if (result.status && result.status.taskId) {
+                            currentTaskId = result.status.taskId;
+                        }
+
+                        // Intercept Tool Invocations and Results
+                        const msgForTools = (result.status && result.status.message) || result.message;
+
+                        if (msgForTools) {
+                            // Format 1: Kagent MCP tool calls & results come back as parts with kind="data"
+                            const parts = msgForTools.parts;
+                            if (parts && Array.isArray(parts)) {
+                                for (const part of parts) {
+                                    if (part.kind === 'data') {
+                                        try {
+                                            let dataObj = part.data;
+                                            if (typeof dataObj === 'string') dataObj = JSON.parse(dataObj);
+
+                                            if (dataObj && typeof dataObj === 'object') {
+                                                const toolName = dataObj.name || '';
+                                                // Tool invocation starting (has name/args, but no response yet)
+                                                if (toolName && !dataObj.response && !dataObj.structuredContent) {
+                                                    if (toolName === 'search_github_issues') {
+                                                        setToolStatus('Searching GitHub issues & discussions...', 'github');
+                                                    } else if (toolName === 'search_kubeflow_code') {
+                                                        setToolStatus('Searching code repositories...', 'code');
+                                                    } else if (toolName === 'search_kubeflow_docs') {
+                                                        setToolStatus('Searching Kubeflow documentation...', 'search');
+                                                    } else {
+                                                        setToolStatus('Consulting Kubeflow resources...', 'search');
+                                                    }
+                                                }
+
+                                                // Tool results with citations
+                                                const foundCitations = extractCitationsFromData(dataObj);
+                                                if (foundCitations && foundCitations.length > 0) {
+                                                    handleAPIResponse({ type: 'citations', citations: foundCitations });
+                                                    setToolStatus('Analyzing sources & writing response...', 'sparkle');
+                                                }
+                                            }
+                                        } catch (e) { /* ignore parse error */ }
+                                    }
+                                }
+                            }
+
+                            // Format 2: Legacy metadata.tool_calls
+                            const toolCalls = msgForTools.metadata && msgForTools.metadata.tool_calls;
+                            if (toolCalls && Array.isArray(toolCalls)) {
+                                for (const tool of toolCalls) {
+                                    const toolName = tool.name || (tool.function && tool.function.name) || '';
+                                    if (toolName === 'search_github_issues') {
+                                        setToolStatus('Searching GitHub issues & discussions...', 'github');
+                                    } else if (toolName === 'search_kubeflow_code') {
+                                        setToolStatus('Searching code repositories...', 'code');
+                                    } else if (toolName === 'search_kubeflow_docs') {
+                                        setToolStatus('Searching Kubeflow documentation...', 'search');
+                                    } else if (toolName) {
+                                        setToolStatus('Consulting Kubeflow resources...', 'search');
+                                    }
+
+                                    const rawResult = tool.function && tool.function.result;
+                                    if (rawResult) {
+                                        try {
+                                            const toolData = typeof rawResult === 'string' ? JSON.parse(rawResult) : rawResult;
+                                            const foundCitations = extractCitationsFromData(toolData);
+                                            if (foundCitations && foundCitations.length > 0) {
+                                                handleAPIResponse({ type: 'citations', citations: foundCitations });
+                                                setToolStatus('Analyzing sources & writing response...', 'sparkle');
+                                            }
+                                        } catch (e) {}
+                                    }
+                                }
+                            }
+                        }
+
                         // Extract message whether it's direct in result or inside result.status
                         const messageObj = result.message || (result.status && result.status.message);
-                        
+
                         if (messageObj && messageObj.parts) {
-                            // Skip user messages echoed back by KAgent
                             const isUserMessage = messageObj.role === 'user';
-                            // Skip the final full message if we already streamed partial chunks
                             const isDuplicateFinal = messageObj.metadata && messageObj.metadata.kagent_adk_partial === false && currentMessageContent.length > 0;
-                            
+
                             if (!isUserMessage && !isDuplicateFinal) {
                                 for (const part of messageObj.parts) {
                                     if (part.kind === 'text' && part.text) {
@@ -938,12 +1260,16 @@ document.addEventListener('DOMContentLoaded', async function() {
                                 }
                             }
                         }
-                        
+
                         // Detect KAgent end of stream signal
                         const isFinal = result.final === true;
                         const turnComplete = messageObj && messageObj.metadata && messageObj.metadata.turn_complete;
-                        
+
                         if (isFinal || turnComplete) {
+                            removeToolStatus();
+                            if (currentMessageDiv && pendingCitations.length > 0) {
+                                renderCitationsOnDiv(currentMessageDiv, pendingCitations);
+                            }
                             if (currentMessageContent.trim()) {
                                 messagesHistory.push({
                                     role: 'assistant',
@@ -954,37 +1280,111 @@ document.addEventListener('DOMContentLoaded', async function() {
                             currentMessageContent = '';
                             autoSaveCurrentChat();
                             removeTypingIndicator();
+                            setStopButtonState(false);
+                            isTyping = false;
                             return;
                         }
                     } catch (parseError) {
-                        // Some chunks might just be keep-alives or partial json, ignore gracefully
-                        console.debug('Failed to parse line:', line);
+                        // Ignore malformed event payloads; SSE comments and
+                        // heartbeats are filtered by the frame parser.
                     }
                 }
+
+                if (done) break;
             }
-            
+
         } catch (error) {
-            console.error('Error sending message to API:', error);
+            if (error.name === 'AbortError') {
+                console.log('Stream aborted by user');
+                // Cleanup handled in stopGeneration()
+            } else {
+                console.error('Error sending message to API:', error);
+                removeTypingIndicator();
+                removeToolStatus();
+                addMessage('Sorry, there was an error processing your request. Please try again.', 'bot');
+            }
+        } finally {
+            currentAbortController = null;
+            currentReader = null;
+            currentTaskId = null;
+            isTyping = false;
+            setStopButtonState(false);
             removeTypingIndicator();
-            addMessage('Sorry, there was an error processing your request. Please try again.', 'bot');
+            removeToolStatus();
         }
     }
-    
+
+    function setToolStatus(text, iconType = 'search') {
+        let iconSvg = '';
+        if (iconType === 'github') {
+            iconSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`;
+        } else if (iconType === 'code') {
+            iconSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>`;
+        } else if (iconType === 'sparkle') {
+            iconSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`;
+        } else {
+            // Default: Search Document Icon
+            iconSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>`;
+        }
+
+        const pillHtml = `
+            <div class="flo-tool-status" id="active-tool-status">
+                <div class="flo-tool-status-icon">${iconSvg}</div>
+                <span class="flo-tool-status-text">${escapeHtml(text)}</span>
+            </div>
+        `;
+
+        const typingIndicator = document.getElementById('typing-indicator');
+        if (typingIndicator) {
+            const contentDiv = typingIndicator.querySelector('.message-content');
+            if (contentDiv) {
+                contentDiv.innerHTML = pillHtml;
+            }
+        } else if (currentMessageDiv) {
+            const messageContent = currentMessageDiv.querySelector('.message-content');
+            if (messageContent) {
+                let existingStatus = messageContent.querySelector('#active-tool-status');
+                if (!existingStatus) {
+                    const temp = document.createElement('div');
+                    temp.innerHTML = pillHtml;
+                    messageContent.appendChild(temp.firstElementChild);
+                } else {
+                    existingStatus.outerHTML = pillHtml;
+                }
+            }
+        } else {
+            showTypingIndicator();
+            const ti = document.getElementById('typing-indicator');
+            if (ti) {
+                const c = ti.querySelector('.message-content');
+                if (c) c.innerHTML = pillHtml;
+            }
+        }
+        scrollToBottom();
+    }
+
+    function removeToolStatus() {
+        const activeStatuses = document.querySelectorAll('#active-tool-status');
+        activeStatuses.forEach(el => el.remove());
+    }
+
     function handleAPIResponse(response) {
-        console.log('Received API response:', response);
-        
         // Handle different response types
         if (response.type === 'system') {
-            console.log('System message:', response.content);
             return;
         }
-        
+
         if (response.type === 'citations') {
             addCitations(response.citations);
             return;
         }
-        
+
         if (response.type === 'content') {
+            if (!isTyping) return; // Drop trailing content if user clicked stop
+
+            // Remove any inline tool status pill as soon as real text streams
+            removeToolStatus();
+
             if (!currentMessageDiv) {
                 if (!chatMessages) {
                     console.error('Cannot display message: chat messages container not found');
@@ -994,31 +1394,31 @@ document.addEventListener('DOMContentLoaded', async function() {
                 // Create new message div for the first token
                 currentMessageDiv = document.createElement('div');
                 currentMessageDiv.className = 'message bot-message';
-                
+
                 const avatarContainer = document.createElement('div');
                 avatarContainer.className = 'flo-avatar-container';
                 avatarContainer.innerHTML = '<img src="https://cdn.jsdelivr.net/gh/SanthoshToorpu/docs-agent@main/assets/flo_avatar.png" class="flo-avatar-img" alt="Flo" />';
-                
+
                 const contentDiv = document.createElement('div');
                 contentDiv.className = 'message-content';
-                
+
                 const paragraph = document.createElement('p');
                 currentMessageDiv.appendChild(avatarContainer);
                 currentMessageDiv.appendChild(contentDiv);
                 contentDiv.appendChild(paragraph);
-                
+
                 chatMessages.appendChild(currentMessageDiv);
                 removeTypingIndicator();
             }
-            
+
             // Append new content
             currentMessageContent += response.content;
             const paragraph = currentMessageDiv.querySelector('p');
-            
+
             // Format streaming content
-            const formattedText = formatMarkdown(currentMessageContent, true);
+            const formattedText = formatChatMarkdown(currentMessageContent, true);
             paragraph.innerHTML = formattedText;
-            
+
             // Apply syntax highlighting to any new code blocks
             if (window.Prism) {
                 const codeBlocks = currentMessageDiv.querySelectorAll('pre code');
@@ -1029,10 +1429,10 @@ document.addEventListener('DOMContentLoaded', async function() {
                     }
                 });
             }
-            
+
             scrollToBottom();
         }
-        
+
         // Handle end of message or errors
         if (response.type === 'end') {
             // Store the complete bot response in conversation history
@@ -1055,15 +1455,15 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Load chats from storage and initialize
     loadChatsFromStorage();
-    
+
     // Load theme state
     if (localStorage.getItem('chatbot_dark_theme') === 'enabled') {
         if (chatbotContainer) chatbotContainer.classList.add('dark-theme');
     }
-    
+
     // Add welcome message
     addWelcomeMessage();
-    
+
     // Initialize API connection
     initializeAPI();
 
@@ -1089,7 +1489,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Toggle options dropdown
     if (optionsBtn && optionsDropdown) {
-        optionsBtn.addEventListener('click', function(e) {
+        optionsBtn.addEventListener('click', function (e) {
             e.stopPropagation();
             optionsDropdown.classList.toggle('show');
         });
@@ -1101,23 +1501,23 @@ document.addEventListener('DOMContentLoaded', async function() {
     const optClearThread = document.getElementById('opt-clear-thread');
 
     if (optExportTranscript) {
-        optExportTranscript.addEventListener('click', function(e) {
+        optExportTranscript.addEventListener('click', function (e) {
             e.stopPropagation();
             if (optionsDropdown) optionsDropdown.classList.remove('show');
-            
+
             if (messagesHistory.length === 0) {
                 alert("No messages to export.");
                 return;
             }
-            
+
             let transcriptText = "Kube Flow AI Companion - Chat Transcript\n";
             transcriptText += "========================================\n\n";
-            
+
             messagesHistory.forEach(msg => {
                 const role = msg.role === 'user' ? 'User' : 'Flo';
                 transcriptText += `[${role}]: ${msg.content}\n\n`;
             });
-            
+
             const blob = new Blob([transcriptText], { type: 'text/plain' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
@@ -1129,7 +1529,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     if (optNewChat) {
-        optNewChat.addEventListener('click', function(e) {
+        optNewChat.addEventListener('click', function (e) {
             e.stopPropagation();
             if (optionsDropdown) optionsDropdown.classList.remove('show');
             startNewChat();
@@ -1137,7 +1537,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     if (optClearThread) {
-        optClearThread.addEventListener('click', function(e) {
+        optClearThread.addEventListener('click', function (e) {
             e.stopPropagation();
             if (optionsDropdown) optionsDropdown.classList.remove('show');
             if (confirm('Clear this chat session?')) {
@@ -1149,7 +1549,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Expand Button
     if (expandBtn) {
-        expandBtn.addEventListener('click', function(e) {
+        expandBtn.addEventListener('click', function (e) {
             e.stopPropagation();
             if (chatbotContainer.classList.contains('expanded')) {
                 restoreChatbot();
@@ -1160,7 +1560,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     // Close options dropdown on clicking outside
-    document.addEventListener('click', function(e) {
+    document.addEventListener('click', function (e) {
         if (optionsDropdown && optionsDropdown.classList.contains('show')) {
             if (!optionsBtn.contains(e.target) && !optionsDropdown.contains(e.target)) {
                 optionsDropdown.classList.remove('show');
@@ -1171,16 +1571,24 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 
     // Event Listeners
-    sendButton.addEventListener('click', handleSendMessage);
-    userInput.addEventListener('keypress', function(e) {
+    sendButton.addEventListener('click', function () {
+        if (isTyping) {
+            stopGeneration();
+        } else {
+            handleSendMessage();
+        }
+    });
+    userInput.addEventListener('keypress', function (e) {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            handleSendMessage();
+            if (!isTyping) {
+                handleSendMessage();
+            }
         }
     });
 
     // Auto-resize textarea
-    userInput.addEventListener('input', function() {
+    userInput.addEventListener('input', function () {
         this.style.height = 'auto';
         this.style.height = Math.min(this.scrollHeight, 120) + 'px';
     });
@@ -1201,24 +1609,24 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     chatbotToggle.addEventListener('click', openChatbot);
-    
+
     // Explicitly bind to the video in case clicks don't bubble
     const toggleVideo = chatbotToggle.querySelector('video');
     if (toggleVideo) {
-        toggleVideo.addEventListener('click', function(e) {
+        toggleVideo.addEventListener('click', function (e) {
             e.stopPropagation();
             openChatbot(e);
         });
     }
 
-    toggleButton.addEventListener('click', function() {
+    toggleButton.addEventListener('click', function () {
         chatbotContainer.style.display = 'none';
         if (chatbotBackdrop) chatbotBackdrop.style.display = 'none';
         chatbotToggle.style.display = 'flex'; // Show the floating video toggle
         document.body.classList.remove('chatbot-open'); // Restore body scroll
     });
 
-    chatbotBackdrop.addEventListener('click', function() {
+    chatbotBackdrop.addEventListener('click', function () {
         chatbotContainer.style.display = 'none';
         if (chatbotBackdrop) chatbotBackdrop.style.display = 'none';
         chatbotToggle.style.display = 'flex'; // Show the floating video toggle
@@ -1248,7 +1656,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             mascotVid.src = persona === 'debug' ? 'https://cdn.jsdelivr.net/gh/SanthoshToorpu/docs-agent@main/assets/flo_debugger.webm' : 'https://cdn.jsdelivr.net/gh/SanthoshToorpu/docs-agent@main/assets/flo.webm';
             mascotVid.dataset.persona = persona;
             mascotVid.load();
-            mascotVid.play().catch(() => {});
+            mascotVid.play().catch(() => { });
         }
 
         // Swap launcher video source too
@@ -1256,7 +1664,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (toggleVid) {
             toggleVid.src = persona === 'debug' ? 'https://cdn.jsdelivr.net/gh/SanthoshToorpu/docs-agent@main/assets/flo_debugger.webm' : 'https://cdn.jsdelivr.net/gh/SanthoshToorpu/docs-agent@main/assets/flo.webm';
             toggleVid.load();
-            toggleVid.play().catch(() => {});
+            toggleVid.play().catch(() => { });
         }
 
         // Swap mascot label badge
@@ -1275,35 +1683,35 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     if (personaOptionDocs) {
-        personaOptionDocs.addEventListener('click', function() {
+        personaOptionDocs.addEventListener('click', function () {
             selectPersona('docs');
         });
     }
 
     if (personaOptionDebug) {
-        personaOptionDebug.addEventListener('click', function() {
+        personaOptionDebug.addEventListener('click', function () {
             selectPersona('debug');
         });
     }
 
     // New chat button event listener
-    sidebarNewChat.addEventListener('click', function() {
+    sidebarNewChat.addEventListener('click', function () {
         console.log('Sidebar new chat clicked');
         startNewChat();
     });
-    
+
     // Sidebar expand button event listener
-    sidebarExpand.addEventListener('click', function() {
+    sidebarExpand.addEventListener('click', function () {
         console.log('Sidebar expand clicked');
         toggleSidebar();
     });
-    
+
     // Click outside sidebar to close
-    document.addEventListener('click', function(e) {
+    document.addEventListener('click', function (e) {
         const sidebar = document.getElementById('chat-sidebar');
         const sidebarStrip = document.getElementById('sidebar-strip');
         const expandBtn = document.getElementById('sidebar-expand');
-        
+
         if (sidebar && !sidebar.classList.contains('collapsed')) {
             // Check if click is outside sidebar and sidebar strip
             if (!sidebar.contains(e.target) && !sidebarStrip.contains(e.target) && e.target !== expandBtn) {
@@ -1313,72 +1721,12 @@ document.addEventListener('DOMContentLoaded', async function() {
     });
 
     // Auto-save on page unload
-    window.addEventListener('beforeunload', function() {
+    window.addEventListener('beforeunload', function () {
         autoSaveCurrentChat();
     });
 
     // Auto-save every 30 seconds
     setInterval(autoSaveCurrentChat, 30000);
-
-    // Utility function to format text
-    function formatMarkdown(text, isStreaming = false) {
-        if (!text) return '';
-        
-        let formatted = text;
-        const codeBlockPlaceholders = [];
-        let placeholderIndex = 0;
-        
-        // Handle code blocks first (triple backticks) and replace with placeholders
-        if (isStreaming) {
-            // For streaming, be more careful with incomplete code blocks
-            const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
-            formatted = formatted.replace(codeBlockRegex, function(match, lang, code) {
-                const language = lang || 'text';
-                const placeholder = `__CODE_BLOCK_${placeholderIndex}__`;
-                codeBlockPlaceholders[placeholderIndex] = `<pre><code class="language-${language}">${escapeHtml(code.trim())}</code></pre>`;
-                placeholderIndex++;
-                return placeholder;
-            });
-            
-            // Handle incomplete code blocks at the end
-            const incompleteCodeRegex = /```(\w+)?\n([\s\S]*)$/;
-            if (incompleteCodeRegex.test(formatted) && !formatted.endsWith('```')) {
-                formatted = formatted.replace(incompleteCodeRegex, function(match, lang, code) {
-                    const language = lang || 'text';
-                    const placeholder = `__CODE_BLOCK_${placeholderIndex}__`;
-                    codeBlockPlaceholders[placeholderIndex] = `<pre><code class="language-${language}">${escapeHtml(code)}</code></pre>`;
-                    placeholderIndex++;
-                    return placeholder;
-                });
-            }
-        } else {
-            // For complete text, handle normally
-            const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
-            formatted = formatted.replace(codeBlockRegex, function(match, lang, code) {
-                const language = lang || 'text';
-                const placeholder = `__CODE_BLOCK_${placeholderIndex}__`;
-                codeBlockPlaceholders[placeholderIndex] = `<pre><code class="language-${language}">${escapeHtml(code.trim())}</code></pre>`;
-                placeholderIndex++;
-                return placeholder;
-            });
-        }
-        
-        // Handle inline code (single backticks) - avoid already processed code blocks
-        formatted = formatted.replace(/`([^`\n]+)`/g, '<code>$1</code>');
-        
-        // Handle line breaks (only outside code blocks)
-        formatted = formatted.replace(/\n/g, '<br>');
-        
-        // Handle bold text
-        formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-        
-        // Restore code blocks from placeholders
-        codeBlockPlaceholders.forEach((codeBlock, index) => {
-            formatted = formatted.replace(`__CODE_BLOCK_${index}__`, codeBlock);
-        });
-        
-        return formatted;
-    }
 
     function handleSendMessage() {
         const message = userInput.value.trim();
@@ -1406,7 +1754,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             removeTypingIndicator();
             addMessage('Unable to connect to the server. Please try again later.', 'bot');
         }
-        
+
         // Auto-save after user message
         autoSaveCurrentChat();
     }
@@ -1419,23 +1767,22 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${sender}-message`;
-        
+
         if (sender === 'bot') {
             const avatarContainer = document.createElement('div');
             avatarContainer.className = 'flo-avatar-container';
             avatarContainer.innerHTML = '<img src="https://cdn.jsdelivr.net/gh/SanthoshToorpu/docs-agent@main/assets/flo_avatar.png" class="flo-avatar-img" alt="Flo" />';
             messageDiv.appendChild(avatarContainer);
         }
-        
+
         const contentDiv = document.createElement('div');
         contentDiv.className = 'message-content';
-        
+
         const paragraph = document.createElement('p');
-        
+
         // Format the text based on sender
         if (sender === 'bot') {
-            paragraph.innerHTML = formatMarkdown(text);
-            
+            paragraph.innerHTML = formatChatMarkdown(text);
             // Apply syntax highlighting after DOM insertion
             setTimeout(() => {
                 if (window.Prism) {
@@ -1451,78 +1798,182 @@ document.addEventListener('DOMContentLoaded', async function() {
         } else {
             paragraph.textContent = text;
         }
-        
+
         contentDiv.appendChild(paragraph);
         messageDiv.appendChild(contentDiv);
-        
+
         chatMessages.appendChild(messageDiv);
         scrollToBottom();
     }
 
+    function formatCitationInfo(citation) {
+        let url = '';
+        let rawFile = '';
+        let title = '';
+
+        if (typeof citation === 'string') {
+            url = citation;
+        } else if (citation && typeof citation === 'object') {
+            url = citation.url || citation.link || citation.href || '';
+            rawFile = citation.file || citation.filepath || '';
+            title = citation.title || '';
+        }
+
+        if (!url && !rawFile) return null;
+
+        // Friendly title calculation
+        if (!title) {
+            if (rawFile) {
+                // e.g. "content/en/docs/components/katib/user-guides/hp-tuning/configure-algorithm.md"
+                const cleanPath = rawFile.replace(/^content\/[a-z]{2}\/docs\//, '').replace(/\.md$/, '');
+                const segments = cleanPath.split('/').filter(Boolean);
+                title = segments.map(s => s.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase())).join(' › ');
+            } else if (url) {
+                try {
+                    const u = new URL(url);
+                    const pathParts = u.pathname.replace(/^\/docs\//, '').replace(/\/$/, '').split('/').filter(Boolean);
+                    if (pathParts.length > 0) {
+                        title = pathParts.map(s => s.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase())).join(' › ');
+                    } else {
+                        title = u.hostname;
+                    }
+                } catch (e) {
+                    title = url.replace(/^https?:\/\//, '');
+                }
+            }
+        }
+
+        // Domain / breadcrumb
+        let domain = 'Kubeflow Documentation';
+        try {
+            if (url) {
+                const u = new URL(url);
+                domain = u.hostname.replace(/^www\./, '');
+            }
+        } catch (e) {}
+
+        return {
+            url: url || '#',
+            title: title || 'Kubeflow Documentation',
+            domain: domain
+        };
+    }
+
     function addCitations(citations) {
         if (!citations || citations.length === 0) return;
-        
-        // Find the last bot message content to attach citations to
-        const lastBotMessage = chatMessages.querySelector('.bot-message:last-child');
-        if (!lastBotMessage) {
-            console.error('No bot message found to attach citations to');
-            return;
+
+        // Add unique citations to pendingCitations buffer (mounted upon turn completion)
+        citations.forEach(c => {
+            if (!c) return;
+            const url = typeof c === 'string' ? c : (c.url || c.link || c.href || '');
+            if (!url) return;
+
+            const alreadyExists = pendingCitations.some(existing => {
+                const existingUrl = typeof existing === 'string' ? existing : (existing.url || existing.link || existing.href || '');
+                return existingUrl === url;
+            });
+
+            if (!alreadyExists) {
+                pendingCitations.push(c);
+            }
+        });
+    }
+
+    function renderCitationsOnDiv(botMessageDiv, citations) {
+        if (!botMessageDiv || !citations || citations.length === 0) return;
+
+        const messageContent = botMessageDiv.querySelector('.message-content');
+        if (!messageContent) return;
+
+        // Remove any existing citations container in this message to avoid duplicates
+        const existingCitations = messageContent.querySelector('.citations-container');
+        if (existingCitations) {
+            existingCitations.remove();
         }
-        
-        // Get the message content div inside the bot message
-        const messageContent = lastBotMessage.querySelector('.message-content');
-        if (!messageContent) {
-            console.error('No message content found to attach citations to');
-            return;
-        }
-        
+
+        const validCitations = citations
+            .map(formatCitationInfo)
+            .filter(Boolean);
+
+        if (validCitations.length === 0) return;
+
         const citationsDiv = document.createElement('div');
         citationsDiv.className = 'citations-container';
-        
-        // Create header with title and toggle
+
+        // Header
         const citationsHeader = document.createElement('div');
         citationsHeader.className = 'citations-header';
-        
-        const citationsTitle = document.createElement('h4');
-        citationsTitle.textContent = `Sources (${citations.length}):`;
-        citationsTitle.className = 'citations-title';
-        
+
+        const headerLeft = document.createElement('div');
+        headerLeft.className = 'citations-header-left';
+        headerLeft.innerHTML = `
+            <div class="citations-icon-badge">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                </svg>
+            </div>
+            <span class="citations-title">Sources &amp; References</span>
+            <span class="citations-count-pill">${validCitations.length}</span>
+        `;
+
         const citationsToggle = document.createElement('span');
-        citationsToggle.className = 'citations-toggle';
-        citationsToggle.textContent = '▼';
-        
-        citationsHeader.appendChild(citationsTitle);
+        citationsToggle.className = 'citations-toggle expanded';
+        citationsToggle.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+        `;
+
+        citationsHeader.appendChild(headerLeft);
         citationsHeader.appendChild(citationsToggle);
-        
-        // Create collapsible content
+
+        // Content
         const citationsContent = document.createElement('div');
-        citationsContent.className = 'citations-content';
-        
-        const citationsList = document.createElement('ul');
-        citationsList.className = 'citations-list';
-        
-        citations.forEach((citation, index) => {
-            const listItem = document.createElement('li');
+        citationsContent.className = 'citations-content expanded';
+
+        const citationsGrid = document.createElement('div');
+        citationsGrid.className = 'citations-grid';
+
+        validCitations.forEach((info, index) => {
             const link = document.createElement('a');
-            link.href = citation;
+            link.className = 'citation-pill';
+            link.style.setProperty('--i', index);
+            link.href = info.url;
             link.target = '_blank';
             link.rel = 'noopener noreferrer';
-            
-            // Extract readable URL text (remove protocol and truncate if too long)
-            let displayText = citation.replace(/^https?:\/\//, '');
-            if (displayText.length > 60) {
-                displayText = displayText.substring(0, 57) + '...';
-            }
-            link.textContent = displayText;
-            
-            listItem.appendChild(link);
-            citationsList.appendChild(listItem);
+
+            link.innerHTML = `
+                <div class="citation-pill-left">
+                    <div class="citation-doc-icon">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                            <polyline points="10 9 9 9 8 9"></polyline>
+                        </svg>
+                    </div>
+                    <div class="citation-pill-text">
+                        <span class="citation-pill-title">${escapeHtml(info.title)}</span>
+                        <span class="citation-pill-sub">${escapeHtml(info.domain)}</span>
+                    </div>
+                </div>
+                <span class="citation-external-icon">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="7" y1="17" x2="17" y2="7"></line>
+                        <polyline points="7 7 17 7 17 17"></polyline>
+                    </svg>
+                </span>
+            `;
+
+            citationsGrid.appendChild(link);
         });
-        
-        citationsContent.appendChild(citationsList);
-        
-        // Add click handler for toggle
-        citationsHeader.addEventListener('click', function() {
+
+        citationsContent.appendChild(citationsGrid);
+
+        // Accordion Toggle
+        citationsHeader.addEventListener('click', function () {
             const isExpanded = citationsContent.classList.contains('expanded');
             if (isExpanded) {
                 citationsContent.classList.remove('expanded');
@@ -1531,22 +1982,21 @@ document.addEventListener('DOMContentLoaded', async function() {
                 citationsContent.classList.add('expanded');
                 citationsToggle.classList.add('expanded');
             }
+            scrollToBottom();
         });
-        
-        // Assemble the citations container
+
         citationsDiv.appendChild(citationsHeader);
         citationsDiv.appendChild(citationsContent);
-        
-        // Attach citations to the message content
         messageContent.appendChild(citationsDiv);
+
         scrollToBottom();
     }
 
     function showTypingIndicator() {
         if (isTyping || !chatMessages) return;
-        
+
         isTyping = true;
-        
+
         const typingDiv = document.createElement('div');
         typingDiv.id = 'typing-indicator';
         typingDiv.className = 'message bot-message typing-indicator';
@@ -1554,19 +2004,19 @@ document.addEventListener('DOMContentLoaded', async function() {
         const avatarContainer = document.createElement('div');
         avatarContainer.className = 'flo-avatar-container';
         avatarContainer.innerHTML = '<img src="https://cdn.jsdelivr.net/gh/SanthoshToorpu/docs-agent@main/assets/flo_avatar.png" class="flo-avatar-img" alt="Flo" />';
-        
+
         const contentDiv = document.createElement('div');
         contentDiv.className = 'message-content';
-        
+
         const typingAnimation = document.createElement('div');
         typingAnimation.className = 'typing-animation';
         typingAnimation.innerHTML = '<video class="flo-loader-icon" src="https://cdn.jsdelivr.net/gh/SanthoshToorpu/docs-agent@main/assets/flo_loader.webm" autoplay loop muted playsinline disablePictureInPicture></video>';
-        
+
         contentDiv.appendChild(typingAnimation);
         typingDiv.appendChild(avatarContainer);
         typingDiv.appendChild(contentDiv);
         chatMessages.appendChild(typingDiv);
-        
+
         scrollToBottom();
     }
 
@@ -1575,19 +2025,12 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (typingIndicator) {
             typingIndicator.remove();
         }
-        isTyping = false;
     }
 
     function scrollToBottom() {
         if (chatMessages) {
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
-    }
-
-    function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
     }
 
     console.log('Chatbot initialized with chat stack system');
