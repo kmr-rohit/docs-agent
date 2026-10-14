@@ -1,0 +1,101 @@
+site_name: Flo · Kubeflow docs-agent
+site_description: An agentic RAG assistant for the Kubeflow documentation, run on Kubernetes with GitOps, evaluation on every merge, and a user-feedback loop.
+repo_url: https://github.com/kubeflow/docs-agent
+repo_name: kubeflow/docs-agent
+edit_uri: edit/main/docs/
+docs_dir: docs
+
+# Local working notes in docs/ that are not part of the site.
+exclude_docs: |
+  drift-register.md
+  platform-plan.md
+  langfuse-walkthrough.md
+  manifests/
+
+theme:
+  name: material
+  logo: assets/flo_avatar.png
+  favicon: assets/flo_avatar.png
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: teal
+      toggle: {icon: material/weather-night, name: Dark mode}
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: teal
+      toggle: {icon: material/weather-sunny, name: Light mode}
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - navigation.indexes
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.action.edit
+    - toc.follow
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - footnotes
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  # Pages under docs/reference/ include the READMEs that live next to the code,
+  # so there is one copy of each and it stays reviewed with the code.
+  - pymdownx.snippets:
+      base_path: ["."]
+      check_paths: true
+
+nav:
+  - Home: index.md
+  - Architecture:
+      - architecture/index.md
+      - Retrieval (RAG v4): RAG_V4_ARCHITECTURE.md
+      - Models and the judge: architecture/models.md
+      - Gateway and security: architecture/gateway.md
+      - Agent reference (for triage): agents/architecture.md
+  - Operations:
+      - operations/index.md
+      - Environments and delivery: operations/environments.md
+      - Argo CD: operations/argocd.md
+      - Observability: operations/observability.md
+      - Ingestion pipelines: operations/ingestion.md
+      - Known gaps: operations/known-gaps.md
+  - Evaluation:
+      - evaluation/index.md
+      - Eval on every merge: evaluation/eval-on-merge.md
+      - Feedback and triage: evaluation/feedback-triage.md
+      - Model tool-use evals: evaluation/tool-use-evals.md
+  - Contributing:
+      - contributing/index.md
+      - How a change reaches users: contributing/change-flow.md
+      - Issue triage setup: agents/README.md
+      - Issue triage labels: agents/triage-labels.md
+      - Issue triage workflow: agents/issue-triage.md
+  - Decisions:
+      - decisions/index.md
+      - LLM runtime decisions: decisions/llm-runtime.md
+
+extra_css:
+  - assets/extra.css

@@ -229,3 +229,6 @@ kube.md*.swp
 
 # Local eval run outputs (summarised in tests/eval/SLM_EVALS.md)
 tests/eval/slm_results/
+
+# MkDocs build output
+site/
