@@ -57,6 +57,7 @@ Results are stored as `triage_layer` and `triage_component` scores on the trace.
 The report in the Job log groups them by owner, with the user's comment. **Nothing
 is filed automatically**; a maintainer turns the report into issues.
 
-!!! warning "Treat layers as suggestions"
-    The judge has not been calibrated against human labels yet, and the
-    component is guessed from keywords. See [known gaps](../operations/known-gaps.md).
+!!! note "Planned"
+    Measuring the judge's agreement with human labels, and letting it choose the
+    component from the question and the user's comment. Until then, treat the
+    layer and component as suggestions for the person filing the issue.

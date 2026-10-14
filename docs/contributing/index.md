@@ -14,7 +14,7 @@ sign your commits for the DCO (`git commit -s`), open a pull request against
 | Add or fix ingestion | `docs-agent-mcp/pipelines/` |
 | Deployment and charts | `docs-agent-mcp/charts/`, `deploy/` |
 | Evals | `tests/eval/` |
-| A first issue | [Known gaps](../operations/known-gaps.md), and issues from the nightly [triage report](../evaluation/feedback-triage.md) |
+| A first issue | Issues labelled `good first issue`, and issues filed from the nightly [triage report](../evaluation/feedback-triage.md) |
 
 ## Before you open a PR
 

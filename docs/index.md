@@ -7,7 +7,7 @@ call, the tools search a vector database, and a self-hosted model writes the
 answer.
 
 The project is `kubeflow/docs-agent`. It started as a Google Summer of Code 2026
-project and is now a subproject of the Kubeflow Agents working group.
+project and is becoming a subproject of the Kubeflow Agents working group.
 
 <div class="grid cards" markdown>
 

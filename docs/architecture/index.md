@@ -53,6 +53,6 @@ flowchart LR
 
 ## Read next
 
-- [Retrieval (RAG v4)](../RAG_V4_ARCHITECTURE.md): schema, intent router, citation contract.
-- [Models and the judge](models.md): why there are two models and how to switch.
+- [Retrieval](retrieval.md): search tools, the intent router, the schema and the citation contract.
+- [Models](models.md): the answer model, the judge, and how to switch.
 - [Gateway and security](gateway.md): what the edge allows and why.

@@ -6,11 +6,17 @@ edit_uri: edit/main/docs/
 docs_dir: docs
 
 # Local working notes in docs/ that are not part of the site.
+# Local working notes, and older design docs kept in the repo but not part of
+# the site (the site describes the current and planned architecture only).
 exclude_docs: |
   drift-register.md
   platform-plan.md
   langfuse-walkthrough.md
   manifests/
+  RAG_V4_ARCHITECTURE.md
+  agents/README.md
+  agents/architecture.md
+  agents/issue-triage.md
 
 theme:
   name: material
@@ -71,31 +77,23 @@ nav:
   - Home: index.md
   - Architecture:
       - architecture/index.md
-      - Retrieval (RAG v4): RAG_V4_ARCHITECTURE.md
-      - Models and the judge: architecture/models.md
+      - Retrieval: architecture/retrieval.md
+      - Models: architecture/models.md
       - Gateway and security: architecture/gateway.md
-      - Agent reference (for triage): agents/architecture.md
   - Operations:
       - operations/index.md
       - Environments and delivery: operations/environments.md
       - Argo CD: operations/argocd.md
       - Observability: operations/observability.md
       - Ingestion pipelines: operations/ingestion.md
-      - Known gaps: operations/known-gaps.md
   - Evaluation:
       - evaluation/index.md
       - Eval on every merge: evaluation/eval-on-merge.md
       - Feedback and triage: evaluation/feedback-triage.md
-      - Model tool-use evals: evaluation/tool-use-evals.md
   - Contributing:
       - contributing/index.md
       - How a change reaches users: contributing/change-flow.md
-      - Issue triage setup: agents/README.md
-      - Issue triage labels: agents/triage-labels.md
-      - Issue triage workflow: agents/issue-triage.md
-  - Decisions:
-      - decisions/index.md
-      - LLM runtime decisions: decisions/llm-runtime.md
+      - Issue labels: agents/triage-labels.md
 
 extra_css:
   - assets/extra.css
