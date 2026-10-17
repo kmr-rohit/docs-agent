@@ -1,0 +1,24 @@
+# Preview values: the pull request being evaluated with /eval (namespace docs-agent-preview).
+# Read from main, while the chart comes from the PR. Public by design: no secrets here.
+# Like staging, it shares the model, the embeddings service and the production Milvus
+# collections. An admin creates its Secrets once: mcp-server-secret with a read-only
+# Milvus user (the PR's code can read it) and mcp-langfuse-keys with the evaluation
+# project's keys.
+mcp:
+  image:
+    # The tag (pr-<number>-<sha8>) is set by the docs-agent-preview ApplicationSet.
+    repository: ghcr.io/kubeflow/mcp-kubeflow-docs
+  extraEnv:
+    - name: LANGFUSE_PUBLIC_KEY
+      valueFrom:
+        secretKeyRef: {name: mcp-langfuse-keys, key: LANGFUSE_PUBLIC_KEY}
+    - name: LANGFUSE_SECRET_KEY
+      valueFrom:
+        secretKeyRef: {name: mcp-langfuse-keys, key: LANGFUSE_SECRET_KEY}
+    - name: LANGFUSE_TRACING_ENVIRONMENT
+      value: preview
+tests:
+  enabled: false
+# The PR is graded by the pr-eval Job, which runs from main (docs-agent-pr-eval).
+eval:
+  enabled: false

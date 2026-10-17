@@ -1,0 +1,61 @@
+# Pre-merge eval, part 1: deploys a pull request labelled `eval` (added by /eval, see
+# .github/workflows/pr-eval.yaml) into the shared preview namespace. One PR at a time:
+# the /eval workflow refuses while another PR holds the label. Removing the label
+# deletes the Application and everything it deployed.
+#
+# The commit deployed is the one the maintainer reviewed, pinned by the workflow in a
+# second label `eval-sha:<sha>`, not the PR's head: commits pushed after /eval are not
+# deployed. The sha is read from the labels in each field below.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: docs-agent-preview
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - pullRequest:
+        github:
+          owner: kubeflow
+          repo: docs-agent
+          labels: [eval]
+        # Anonymous GitHub API: two ApplicationSets at 12 calls an hour each stay under 60.
+        requeueAfterSeconds: 300
+  template:
+    metadata:
+      name: docs-agent-pr-{{ .number }}
+      finalizers:
+        - resources-finalizer.argocd.argoproj.io
+    spec:
+      project: docs-agent-preview
+      sources:
+        # The PR's chart (templates and agent prompts) and its image ...
+        - repoURL: https://github.com/kubeflow/docs-agent
+          targetRevision: '{{ range .labels }}{{ if hasPrefix "eval-sha:" . }}{{ trimPrefix "eval-sha:" . }}{{ end }}{{ end }}'
+          path: docs-agent-mcp/charts/docs-agent
+          helm:
+            releaseName: docs-agent-preview
+            valueFiles:
+              - $values/deploy/envs/preview/docs-agent.yaml
+            parameters:
+              - name: mcp.image.tag
+                value: 'pr-{{ .number }}-{{ range .labels }}{{ if hasPrefix "eval-sha:" . }}{{ trimPrefix "eval-sha:" . | trunc 8 }}{{ end }}{{ end }}'
+        # ... with values from main.
+        - repoURL: https://github.com/kubeflow/docs-agent
+          targetRevision: main
+          ref: values
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: docs-agent-preview
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        # The /eval workflow may still be pushing the image when the label appears.
+        retry:
+          limit: 6
+          backoff:
+            duration: 1m
+            factor: 2
+            maxDuration: 10m
