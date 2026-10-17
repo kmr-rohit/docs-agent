@@ -140,3 +140,5 @@ See `queries.json`. Short form:
 1. `How do I configure Katib hyperparameter tuning?` → `search_kubeflow_docs`
 2. `InferenceService update rejected: deploymentMode cannot be changed from Knative to Serverless` → `search_github_issues`
 3. `Show me a Katib Experiment YAML example` → `search_kubeflow_code`
+
+<!-- pr-eval smoke test -->
